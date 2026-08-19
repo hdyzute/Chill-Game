@@ -1,0 +1,64 @@
+[gd_scene load_steps=3 format=3 uid="uid://playtest_debug"]
+
+[ext_resource type="Script" path="res://scripts/ui/PlaytestDebug.gd" id="1_scr"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dbg"]
+bg_color = Color(0, 0, 0, 0.784314)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="PlaytestDebug" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_scr")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 50.0
+offset_right = -10.0
+offset_bottom = 200.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dbg")
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+text = "--- PLAYTEST METRICS ---"
+horizontal_alignment = 1
+
+[node name="LblTime" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+text = "Play Time: 00:00"
+
+[node name="LblBattles" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+text = "Battles Fought: 0"
+
+[node name="LblStones" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+text = "Evo Stones: 0"
+
+[node name="LblEvoTime" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+text = "First Evo at: Not yet"
+
+[node name="LblLevel" type="Label" parent="PanelContainer/VBox"]
+layout_mode = 2
+text = "Player Lv: 1 | Pet Lv: 1"
+
+[node name="ToggleBtn" type="Button" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -70.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 45.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 14
+text = "F1/DBG"

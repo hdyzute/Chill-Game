@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cypt76u4js4qm"]
+
+[ext_resource type="Script" uid="uid://c1lj8jbj6qvtf" path="res://scripts/map/EquipmentDrop.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://dsxph2eg606s6" path="res://assets/sprites/objects/chest_01.png" id="2_6cokj"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_eq"]
+size = Vector2(30, 30)
+
+[node name="EquipmentDrop" type="Area2D" unique_id=1697987252]
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=675656536]
+modulate = Color(1, 0.8, 0, 1)
+position = Vector2(8, 5.000004)
+scale = Vector2(7.359375, 6.8125)
+texture = ExtResource("2_6cokj")
+hframes = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=119577628]
+shape = SubResource("RectangleShape2D_eq")

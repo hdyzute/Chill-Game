@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://dxuofefcagxbk"]
+
+[ext_resource type="Script" uid="uid://brqi66c77ahji" path="res://scripts/monster/PetFollower.gd" id="1_pf"]
+[ext_resource type="Texture2D" uid="uid://q3hvydr0l2cb" path="res://assets/sprites/characters/pet_dragon.png" id="2_tex"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_pet"]
+radius = 8.0
+height = 24.0
+
+[node name="PetFollower" type="CharacterBody2D" unique_id=2070354274]
+script = ExtResource("1_pf")
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1105624765]
+position = Vector2(0.03999878, -18.4925)
+scale = Vector2(0.07015625, 0.07528021)
+texture = ExtResource("2_tex")
+hframes = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1353928749]
+position = Vector2(0, -8)
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_pet")
+

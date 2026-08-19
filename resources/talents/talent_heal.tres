@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TalentData" load_steps=2 format=3 uid="uid://talent_heal"]
+
+[ext_resource type="Script" path="res://scripts/core/TalentData.gd" id="1_scr"]
+
+[resource]
+script = ExtResource("1_scr")
+talent_id = "talent_heal"
+talent_name = "Hồi Phục Sinh Mệnh"
+description = "Hồi 10 HP mỗi khi lên cấp"
+stat_type = "heal_on_levelup"
+value = 10.0

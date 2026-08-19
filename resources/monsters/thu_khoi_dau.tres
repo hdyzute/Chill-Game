@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3 uid="uid://1uyawlwib0sl"]
+
+[ext_resource type="Script" uid="uid://crp4l81kaxnrf" path="res://scripts/monster/MonsterData.gd" id="1_b76q4"]
+[ext_resource type="Resource" uid="uid://burn_effect" path="res://resources/effects/burn.tres" id="2_burn"]
+
+[ext_resource type="Script" path="res://scripts/combat/StatusEffectData.gd" id="3_eff"]
+
+[resource]
+script = ExtResource("1_b76q4")
+monster_id = "thu_khoi_dau"
+monster_name = "Thú Khởi Đầu"
+element = "Hỏa"
+on_hit_effects = Array[ExtResource("3_eff")]([ExtResource("2_burn")])
+base_hp = 600
+base_atk = 100
+base_def = 50
+hp_growth_per_level = 30
+atk_growth_per_level = 15
+def_growth_per_level = 10
+evolves_into = "thu_tien_hoa"
+evolution_item_id = "evo_stone"
+evolution_player_level_required = 5
+metadata/_custom_type_script = "uid://crp4l81kaxnrf"

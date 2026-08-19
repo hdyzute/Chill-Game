@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TalentData" load_steps=2 format=3 uid="uid://talent_hp"]
+
+[ext_resource type="Script" path="res://scripts/core/TalentData.gd" id="1_scr"]
+
+[resource]
+script = ExtResource("1_scr")
+talent_id = "talent_hp"
+talent_name = "Thân Thể Cường Tráng"
+description = "+20% Máu tối đa"
+stat_type = "hp_percent"
+value = 0.2

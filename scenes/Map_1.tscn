@@ -1,0 +1,89 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/tilesets/map_1.jpg" id="1_bg"]
+[ext_resource type="PackedScene" path="res://scenes/map/Obstacle.tscn" id="2_obs"]
+[ext_resource type="PackedScene" path="res://scenes/map/Player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/map/Pet.tscn" id="4_pet"]
+[ext_resource type="PackedScene" path="res://scenes/map/WildMonster.tscn" id="5_wm"]
+[ext_resource type="PackedScene" path="res://scenes/ui/VirtualJoystick.tscn" id="6_vj"]
+[ext_resource type="PackedScene" path="res://scenes/ui/MainUI.tscn" id="7_ui"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vertical"]
+size = Vector2(40, 600)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_horizontal"]
+size = Vector2(1000, 40)
+
+[node name="Map_1" type="Node2D"]
+
+[node name="GroundBackground" type="Sprite2D" parent="."]
+z_index = -10
+texture = ExtResource("1_bg")
+metadata/_edit_lock_ = true
+
+[node name="EntityContainer" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" parent="EntityContainer" node_paths=PackedStringArray("virtual_joystick") instance=ExtResource("3_player")]
+position = Vector2(0, 50)
+virtual_joystick = NodePath("../../CanvasLayer/VirtualJoystick")
+
+[node name="PetFollower" parent="EntityContainer" node_paths=PackedStringArray("target") instance=ExtResource("4_pet")]
+position = Vector2(-50, 50)
+target = NodePath("../Player")
+
+[node name="WildMonster1" parent="EntityContainer" instance=ExtResource("5_wm")]
+position = Vector2(200, 100)
+
+[node name="WildMonster2" parent="EntityContainer" instance=ExtResource("5_wm")]
+position = Vector2(-150, -100)
+
+[node name="WildMonster3" parent="EntityContainer" instance=ExtResource("5_wm")]
+position = Vector2(100, -200)
+
+[node name="Obstacle1" parent="EntityContainer" instance=ExtResource("2_obs")]
+position = Vector2(-200, -100)
+
+[node name="Obstacle2" parent="EntityContainer" instance=ExtResource("2_obs")]
+position = Vector2(300, -150)
+
+[node name="Obstacle3" parent="EntityContainer" instance=ExtResource("2_obs")]
+position = Vector2(150, 200)
+
+[node name="Obstacle4" parent="EntityContainer" instance=ExtResource("2_obs")]
+position = Vector2(-300, 250)
+
+[node name="WorldBounds" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 1
+
+[node name="LeftWall" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(-490, 0)
+shape = SubResource("RectangleShape2D_vertical")
+
+[node name="RightWall" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(490, 0)
+shape = SubResource("RectangleShape2D_vertical")
+
+[node name="TopWall" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(0, -260)
+shape = SubResource("RectangleShape2D_horizontal")
+
+[node name="BottomWall" type="CollisionShape2D" parent="WorldBounds"]
+position = Vector2(0, 260)
+shape = SubResource("RectangleShape2D_horizontal")
+
+
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MainUI" parent="CanvasLayer" instance=ExtResource("7_ui")]
+
+[node name="VirtualJoystick" parent="CanvasLayer" instance=ExtResource("6_vj")]
+
+
+
+
+
+
+

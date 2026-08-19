@@ -1,0 +1,25 @@
+var damage_text_scene = preload("res://scenes/ui/DamageText.tscn")
+
+func play_hit_anim() -> void:
+    if not sprite: return
+    var tw = create_tween()
+    var orig_color = Color(0.8, 0.1, 0.8, 1.0) if (monster_data and monster_data.is_boss) else Color.WHITE
+    
+    # Gi?t d?
+    sprite.modulate = Color(1.0, 0.4, 0.4)
+    # Shake nh?
+    var orig_pos = sprite.position
+    var shake = Vector2(randf_range(-5, 5), randf_range(-5, 5))
+    tw.tween_property(sprite, "position", orig_pos + shake, 0.05)
+    tw.tween_property(sprite, "position", orig_pos, 0.05)
+    tw.tween_property(sprite, "modulate", orig_color, 0.1)
+
+func play_attack_anim(target_pos: Vector2) -> void:
+    if not sprite: return
+    var tw = create_tween()
+    var orig_pos = sprite.position
+    var dir = (target_pos - global_position).normalized()
+    # Lao t?i
+    tw.tween_property(sprite, "position", orig_pos + dir * 20.0, 0.1).set_trans(Tween.TRANS_QUAD)
+    # Gi?t v?
+    tw.tween_property(sprite, "position", orig_pos, 0.1).set_trans(Tween.TRANS_QUAD)

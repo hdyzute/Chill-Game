@@ -1,0 +1,381 @@
+[gd_scene load_steps=6 format=3 uid="uid://mainui"]
+
+[ext_resource type="Script" path="res://scripts/ui/UIManager.gd" id="1_ui"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.15, 0.15, 0.18, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.5, 0.6, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.05, 0.05, 0.05, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp"]
+bg_color = Color(0.85, 0.2, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp"]
+bg_color = Color(0.95, 0.75, 0.15, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MainUI" type="CanvasLayer"]
+
+[node name="UIManager" type="Control" parent="." node_paths=PackedStringArray("player_hp_bar", "player_exp_bar", "pet_hp_bar", "pet_exp_bar", "player_level_label", "pet_level_label", "inventory_label", "leave_dungeon_button")]
+layout_mode = 3
+anchors_preset = 15`nmouse_filter = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_ui")
+player_hp_bar = NodePath("Profiles/PlayerProfile/Margin/VBox/HPBar")
+player_exp_bar = NodePath("Profiles/PlayerProfile/Margin/VBox/EXPBar")
+pet_hp_bar = NodePath("Profiles/PetProfile/Margin/VBox/HPBar")
+pet_exp_bar = NodePath("Profiles/PetProfile/Margin/VBox/EXPBar")
+player_level_label = NodePath("Profiles/PlayerProfile/Margin/VBox/TopRow/LevelLabel")
+pet_level_label = NodePath("Profiles/PetProfile/Margin/VBox/TopRow/LevelLabel")
+inventory_label = NodePath("BottomRight/VBox/Inventory")
+leave_dungeon_button = NodePath("BottomRight/VBox/LeaveDungeonButton")
+
+[node name="Profiles" type="VBoxContainer" parent="UIManager"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 320.0
+offset_bottom = 220.0
+theme_override_constants/separation = 15
+
+[node name="PlayerProfile" type="PanelContainer" parent="UIManager/Profiles"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="UIManager/Profiles/PlayerProfile"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="UIManager/Profiles/PlayerProfile/Margin"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="UIManager/Profiles/PlayerProfile/Margin/VBox"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="UIManager/Profiles/PlayerProfile/Margin/VBox/TopRow"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Text"
+
+[node name="LevelLabel" type="Label" parent="UIManager/Profiles/PlayerProfile/Margin/VBox/TopRow"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 36
+text = "Text"
+horizontal_alignment = 2
+
+[node name="HPBar" type="ProgressBar" parent="UIManager/Profiles/PlayerProfile/Margin/VBox"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp")
+value = 100.0
+show_percentage = false
+
+[node name="EXPBar" type="ProgressBar" parent="UIManager/Profiles/PlayerProfile/Margin/VBox"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_exp")
+value = 50.0
+show_percentage = false
+
+[node name="PetProfile" type="PanelContainer" parent="UIManager/Profiles"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="UIManager/Profiles/PetProfile"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="UIManager/Profiles/PetProfile/Margin"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="UIManager/Profiles/PetProfile/Margin/VBox"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="UIManager/Profiles/PetProfile/Margin/VBox/TopRow"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Text"
+
+[node name="LevelLabel" type="Label" parent="UIManager/Profiles/PetProfile/Margin/VBox/TopRow"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 36
+text = "Text"
+horizontal_alignment = 2
+
+[node name="HPBar" type="ProgressBar" parent="UIManager/Profiles/PetProfile/Margin/VBox"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp")
+value = 100.0
+show_percentage = false
+
+[node name="EXPBar" type="ProgressBar" parent="UIManager/Profiles/PetProfile/Margin/VBox"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_exp")
+value = 50.0
+show_percentage = false
+
+[node name="BottomRight" type="MarginContainer" parent="UIManager"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -180.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="UIManager/BottomRight"]
+mouse_filter = 2
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 15
+
+[node name="Inventory" type="Label" parent="UIManager/BottomRight/VBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Text"
+horizontal_alignment = 2
+
+[node name="LeaveDungeonButton" type="Button" parent="UIManager/BottomRight/VBox"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Text"
+
+
+[node name="TopRight" type="MarginContainer" parent="UIManager"]
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_bottom = 100.0
+grow_horizontal = 0
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+
+[node name="PauseButton" type="Button" parent="UIManager/TopRight"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_bg")
+theme_override_font_sizes/font_size = 40
+text = "Text"
+[node name="PauseMenu" type="ColorRect" parent="."]
+process_mode = 2
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="CenterContainer" type="CenterContainer" parent="PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="PauseMenu/CenterContainer"]
+custom_minimum_size = Vector2(500, 700)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="PauseMenu/CenterContainer/Panel"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="PauseMenu/CenterContainer/Panel/Margin"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="PauseMenu/CenterContainer/Panel/Margin/VBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Text"
+horizontal_alignment = 1
+
+[node name="Middle" type="HBoxContainer" parent="PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="LeftSkills" type="VBoxContainer" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorRect" type="ColorRect" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle/LeftSkills"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle/LeftSkills"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="AvatarSpace" type="Control" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="RightSkills" type="VBoxContainer" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorRect3" type="ColorRect" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle/RightSkills"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="ColorRect4" type="ColorRect" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Middle/RightSkills"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="Scroll" type="ScrollContainer" parent="PauseMenu/CenterContainer/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="StatsVBox" type="VBoxContainer" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HP" type="Label" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Scroll/StatsVBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Text"
+
+[node name="ATK" type="Label" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Scroll/StatsVBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Text"
+
+[node name="DEF" type="Label" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Scroll/StatsVBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_offset_y = 2
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Text"
+
+[node name="Buttons" type="HBoxContainer" parent="PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ResumeButton" type="Button" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_hp")
+theme_override_font_sizes/font_size = 32
+text = "Text"
+
+[node name="ExitButton" type="Button" parent="PauseMenu/CenterContainer/Panel/Margin/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_bg")
+theme_override_font_sizes/font_size = 32
+text = "Text"
+
+
+
+
+
+
+

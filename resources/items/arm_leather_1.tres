@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EquipmentData" load_steps=2 format=3 uid="uid://arm_leather_1"]
+
+[ext_resource type="Script" path="res://scripts/core/EquipmentData.gd" id="1_eq"]
+
+[resource]
+script = ExtResource("1_eq")
+equip_id = "arm_leather_1"
+equip_name = "Áo Giáp Da"
+slot_type = "armor"
+atk_bonus = 0
+def_bonus = 10
+hp_bonus = 50
