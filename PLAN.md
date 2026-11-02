@@ -67,9 +67,10 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 ## 5. Lộ trình
 
 **Giai đoạn 0: Chuẩn bị**
-- [ ] Lưu trữ hoặc xóa code game Ngự Thú cũ, cập nhật lại `CLAUDE.md`
-- [ ] Cài Flutter SDK, JDK 17, chạy `flutter doctor`
-- [ ] `flutter create`, cấu trúc thư mục, chạy được trên điện thoại hoặc emulator
+- [x] Lưu game Ngự Thú cũ vào nhánh `archive/ngu-thu-game`, cập nhật lại `CLAUDE.md`
+- [x] Cài Flutter SDK (dùng JDK có sẵn trong Android Studio), chạy `flutter doctor`
+- [x] `flutter create`, cấu trúc thư mục, khung 4 tab
+- [x] Chấp nhận Android licenses, chạy được trên điện thoại hoặc emulator
 
 **Giai đoạn 1: App thói quen dùng được (chưa có pet)**
 - [ ] Tạo / sửa / xóa 4 loại task, độ khó, hệ, lịch lặp cho daily
