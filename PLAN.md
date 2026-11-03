@@ -73,7 +73,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Chấp nhận Android licenses, chạy được trên điện thoại hoặc emulator
 
 **Giai đoạn 1: App thói quen dùng được (chưa có pet)**
-- [ ] Tạo / sửa / xóa 4 loại task, độ khó, hệ, lịch lặp cho daily
+- [x] Tạo / sửa / xóa 4 loại task, độ khó, hệ, lịch lặp cho daily (bước 1.1)
 - [ ] Tick / bỏ tick (hoàn lại chính xác), streak, giờ bắt đầu ngày, xử lý sang ngày mới
 - [ ] Thông báo nhắc giờ
 - [ ] Lịch sử và lịch tháng
