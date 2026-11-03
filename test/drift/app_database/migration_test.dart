@@ -1,6 +1,6 @@
 // dart format width=80
 // ignore_for_file: unused_local_variable, unused_import
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +10,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -134,6 +135,52 @@ void main() {
         expect(task.value, 2.5);
         expect(task.dailyTarget, 1);
         expect((await newDb.select(newDb.profiles).getSingle()).coins, 120);
+      },
+    );
+  });
+
+  test('nâng cấp v3 lên v4: task chưa bị cất, cài đặt mặc định, giữ xu',
+      () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.tasks, const [
+          v3.TasksData(
+            id: 1,
+            title: 'Đọc sách',
+            notes: null,
+            type: 'todo',
+            difficulty: 'hard',
+            element: 'water',
+            habitUp: 1,
+            habitDown: 0,
+            dailyTarget: 1,
+            repeatDays: 0x7f,
+            cost: 0,
+            value: 1,
+            streak: 0,
+            completed: 1,
+            sortOrder: 0,
+            createdAt: 1793600000,
+          ),
+        ]);
+        batch.insert(oldDb.profiles,
+            const v3.ProfilesData(id: profileId, coins: 75));
+      },
+      validateItems: (newDb) async {
+        final task = await newDb.select(newDb.tasks).getSingle();
+        expect(task.title, 'Đọc sách');
+        expect(task.completed, 1);
+        expect(task.archived, 0);
+        final profile = await newDb.select(newDb.profiles).getSingle();
+        expect(profile.coins, 75);
+        expect(profile.dayStartHour, 0);
+        expect(profile.resting, 0);
+        expect(profile.lastRolloverDate, isNull);
       },
     );
   });

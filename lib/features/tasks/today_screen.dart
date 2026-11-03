@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../domain/day.dart';
 import 'task_form_screen.dart';
 import 'task_style.dart';
 import 'task_tile.dart';
@@ -14,6 +15,7 @@ class TodayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasks = ref.watch(tasksProvider);
     final counts = ref.watch(todayCountsProvider).value ?? const {};
+    final today = ref.watch(todayProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -35,6 +37,9 @@ class TodayScreen extends ConsumerWidget {
                   return TaskTile(
                     task: task,
                     todayCount: count,
+                    restDay: task.type == TaskType.daily &&
+                        today != null &&
+                        !isDueOn(task.repeatDays, today),
                     onTap: () => _openForm(context, task),
                     onCheck: () => _check(context, ref, task, count),
                     onBad: () => _bad(context, ref, task),

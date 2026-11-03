@@ -76,7 +76,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Tạo / sửa / xóa 4 loại task, độ khó, hệ, lịch lặp cho daily (bước 1.1)
 - [x] Tick / bỏ tick (hoàn lại chính xác), streak, xu, bạo kích, mua phần thưởng (bước 1.2)
 - [x] Thói quen tốt có "số lần mỗi ngày" (mặc định 1) để không bấm liên tục cày xu
-- [ ] Giờ bắt đầu ngày, xử lý sang ngày mới (bước 1.3)
+- [x] Giờ bắt đầu ngày, xử lý sang ngày mới, đứt chuỗi khi bỏ lỡ, chế độ bế quan, cất việc cần làm đã xong (bước 1.3)
 - [ ] Thông báo nhắc giờ
 - [ ] Lịch sử và lịch tháng
 - ✅ Kiểm tra: bạn tự dùng thật 1 tuần

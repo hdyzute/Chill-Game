@@ -37,6 +37,9 @@ class Tasks extends Table {
   IntColumn get streak => integer().withDefault(const Constant(0))();
   BoolColumn get completed => boolean().withDefault(const Constant(false))();
 
+  /// Việc cần làm đã xong từ hôm trước: ẩn khỏi danh sách, giữ cho lịch sử.
+  BoolColumn get archived => boolean().withDefault(const Constant(false))();
+
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -54,10 +57,19 @@ class TaskLogs extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-/// Một dòng duy nhất (id = [profileId]) giữ ví của người dùng.
+/// Một dòng duy nhất (id = [profileId]) giữ ví và cài đặt của người dùng.
 class Profiles extends Table {
   IntColumn get id => integer()();
   IntColumn get coins => integer().withDefault(const Constant(0))();
+
+  /// Giờ bắt đầu ngày mới (0–12), cho người thức khuya.
+  IntColumn get dayStartHour => integer().withDefault(const Constant(0))();
+
+  /// Bế quan: bỏ lỡ daily không bị đứt chuỗi.
+  BoolColumn get resting => boolean().withDefault(const Constant(false))();
+
+  /// Ngày (logic) đã xử lý sang ngày gần nhất. Null khi chưa mở app lần nào.
+  DateTimeColumn get lastRolloverDate => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -71,7 +83,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -85,6 +97,13 @@ class AppDatabase extends _$AppDatabase {
           },
           from2To3: (m, schema) async {
             await m.addColumn(schema.tasks, schema.tasks.dailyTarget);
+          },
+          from3To4: (m, schema) async {
+            await m.addColumn(schema.tasks, schema.tasks.archived);
+            await m.addColumn(schema.profiles, schema.profiles.dayStartHour);
+            await m.addColumn(schema.profiles, schema.profiles.resting);
+            await m.addColumn(
+                schema.profiles, schema.profiles.lastRolloverDate);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

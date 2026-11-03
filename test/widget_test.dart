@@ -19,12 +19,16 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
   });
 
+  // Thứ 3, 10 giờ sáng: cố định để lịch lặp theo thứ không phụ thuộc ngày chạy.
+  DateTime clock() => DateTime(2026, 11, 3, 10);
+
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
-        scoreServiceProvider
-            .overrideWithValue(ScoreService(db, random: NoCritRandom())),
+        clockProvider.overrideWithValue(clock),
+        scoreServiceProvider.overrideWithValue(
+            ScoreService(db, random: NoCritRandom(), clock: clock)),
       ],
       child: const LinhThuApp(),
     ));
@@ -32,11 +36,12 @@ void main() {
   }
 
   Future<void> addTask(String title, TaskType type,
-          {int cost = 0, int dailyTarget = 1}) =>
+          {int cost = 0, int dailyTarget = 1, int repeatDays = everyDayMask}) =>
       db.into(db.tasks).insert(TasksCompanion.insert(
             title: title,
             type: type,
             difficulty: Difficulty.easy,
+            repeatDays: Value(repeatDays),
             element: Value(type == TaskType.reward ? null : TaskElement.fire),
             cost: Value(cost),
             dailyTarget: Value(dailyTarget),
@@ -136,6 +141,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Chưa đủ xu: cần 30, bạn đang có 0'), findsOneWidget);
     expect(coinsShown(tester), '0');
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('daily không phải làm hôm nay thì ghi "Hôm nay nghỉ"',
+      (tester) async {
+    await addTask('Tập gym', TaskType.daily, repeatDays: 0x15); // T2, T4, T6
+    await addTask('Đọc sách', TaskType.daily);
+    await pumpApp(tester);
+
+    expect(find.text('Hôm nay nghỉ · Hỏa · T2, T4, T6 · Dễ'), findsOneWidget);
+    expect(find.text('Hỏa · Mỗi ngày · Dễ'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('cài đặt: đổi giờ bắt đầu ngày và bật bế quan', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('dayStartHour')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('4:00').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Đang bế quan'), findsOneWidget);
+
+    final profile = await db.select(db.profiles).getSingle();
+    expect(profile.dayStartHour, 4);
+    expect(profile.resting, isTrue);
 
     await tearDownApp(tester);
   });

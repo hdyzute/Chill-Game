@@ -169,6 +169,21 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _archivedMeta = const VerificationMeta(
+    'archived',
+  );
+  @override
+  late final GeneratedColumn<bool> archived = GeneratedColumn<bool>(
+    'archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -209,6 +224,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     value,
     streak,
     completed,
+    archived,
     sortOrder,
     createdAt,
   ];
@@ -290,6 +306,12 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       context.handle(
         _completedMeta,
         completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
+      );
+    }
+    if (data.containsKey('archived')) {
+      context.handle(
+        _archivedMeta,
+        archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
       );
     }
     if (data.containsKey('sort_order')) {
@@ -375,6 +397,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         DriftSqlType.bool,
         data['${effectivePrefix}completed'],
       )!,
+      archived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archived'],
+      )!,
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -426,6 +452,9 @@ class Task extends DataClass implements Insertable<Task> {
   final double value;
   final int streak;
   final bool completed;
+
+  /// Việc cần làm đã xong từ hôm trước: ẩn khỏi danh sách, giữ cho lịch sử.
+  final bool archived;
   final int sortOrder;
   final DateTime createdAt;
   const Task({
@@ -443,6 +472,7 @@ class Task extends DataClass implements Insertable<Task> {
     required this.value,
     required this.streak,
     required this.completed,
+    required this.archived,
     required this.sortOrder,
     required this.createdAt,
   });
@@ -475,6 +505,7 @@ class Task extends DataClass implements Insertable<Task> {
     map['value'] = Variable<double>(value);
     map['streak'] = Variable<int>(streak);
     map['completed'] = Variable<bool>(completed);
+    map['archived'] = Variable<bool>(archived);
     map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -500,6 +531,7 @@ class Task extends DataClass implements Insertable<Task> {
       value: Value(value),
       streak: Value(streak),
       completed: Value(completed),
+      archived: Value(archived),
       sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
     );
@@ -531,6 +563,7 @@ class Task extends DataClass implements Insertable<Task> {
       value: serializer.fromJson<double>(json['value']),
       streak: serializer.fromJson<int>(json['streak']),
       completed: serializer.fromJson<bool>(json['completed']),
+      archived: serializer.fromJson<bool>(json['archived']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -559,6 +592,7 @@ class Task extends DataClass implements Insertable<Task> {
       'value': serializer.toJson<double>(value),
       'streak': serializer.toJson<int>(streak),
       'completed': serializer.toJson<bool>(completed),
+      'archived': serializer.toJson<bool>(archived),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -579,6 +613,7 @@ class Task extends DataClass implements Insertable<Task> {
     double? value,
     int? streak,
     bool? completed,
+    bool? archived,
     int? sortOrder,
     DateTime? createdAt,
   }) => Task(
@@ -596,6 +631,7 @@ class Task extends DataClass implements Insertable<Task> {
     value: value ?? this.value,
     streak: streak ?? this.streak,
     completed: completed ?? this.completed,
+    archived: archived ?? this.archived,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -621,6 +657,7 @@ class Task extends DataClass implements Insertable<Task> {
       value: data.value.present ? data.value.value : this.value,
       streak: data.streak.present ? data.streak.value : this.streak,
       completed: data.completed.present ? data.completed.value : this.completed,
+      archived: data.archived.present ? data.archived.value : this.archived,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -643,6 +680,7 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('value: $value, ')
           ..write('streak: $streak, ')
           ..write('completed: $completed, ')
+          ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -665,6 +703,7 @@ class Task extends DataClass implements Insertable<Task> {
     value,
     streak,
     completed,
+    archived,
     sortOrder,
     createdAt,
   );
@@ -686,6 +725,7 @@ class Task extends DataClass implements Insertable<Task> {
           other.value == this.value &&
           other.streak == this.streak &&
           other.completed == this.completed &&
+          other.archived == this.archived &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt);
 }
@@ -705,6 +745,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<double> value;
   final Value<int> streak;
   final Value<bool> completed;
+  final Value<bool> archived;
   final Value<int> sortOrder;
   final Value<DateTime> createdAt;
   const TasksCompanion({
@@ -722,6 +763,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.value = const Value.absent(),
     this.streak = const Value.absent(),
     this.completed = const Value.absent(),
+    this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -740,6 +782,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.value = const Value.absent(),
     this.streak = const Value.absent(),
     this.completed = const Value.absent(),
+    this.archived = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : title = Value(title),
@@ -760,6 +803,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<double>? value,
     Expression<int>? streak,
     Expression<bool>? completed,
+    Expression<bool>? archived,
     Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
   }) {
@@ -778,6 +822,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (value != null) 'value': value,
       if (streak != null) 'streak': streak,
       if (completed != null) 'completed': completed,
+      if (archived != null) 'archived': archived,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -798,6 +843,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Value<double>? value,
     Value<int>? streak,
     Value<bool>? completed,
+    Value<bool>? archived,
     Value<int>? sortOrder,
     Value<DateTime>? createdAt,
   }) {
@@ -816,6 +862,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       value: value ?? this.value,
       streak: streak ?? this.streak,
       completed: completed ?? this.completed,
+      archived: archived ?? this.archived,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -872,6 +919,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (completed.present) {
       map['completed'] = Variable<bool>(completed.value);
     }
+    if (archived.present) {
+      map['archived'] = Variable<bool>(archived.value);
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -898,6 +948,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('value: $value, ')
           ..write('streak: $streak, ')
           ..write('completed: $completed, ')
+          ..write('archived: $archived, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1433,8 +1484,53 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _dayStartHourMeta = const VerificationMeta(
+    'dayStartHour',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, coins];
+  late final GeneratedColumn<int> dayStartHour = GeneratedColumn<int>(
+    'day_start_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _restingMeta = const VerificationMeta(
+    'resting',
+  );
+  @override
+  late final GeneratedColumn<bool> resting = GeneratedColumn<bool>(
+    'resting',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("resting" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _lastRolloverDateMeta = const VerificationMeta(
+    'lastRolloverDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastRolloverDate =
+      GeneratedColumn<DateTime>(
+        'last_rollover_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    coins,
+    dayStartHour,
+    resting,
+    lastRolloverDate,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1456,6 +1552,30 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         coins.isAcceptableOrUnknown(data['coins']!, _coinsMeta),
       );
     }
+    if (data.containsKey('day_start_hour')) {
+      context.handle(
+        _dayStartHourMeta,
+        dayStartHour.isAcceptableOrUnknown(
+          data['day_start_hour']!,
+          _dayStartHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('resting')) {
+      context.handle(
+        _restingMeta,
+        resting.isAcceptableOrUnknown(data['resting']!, _restingMeta),
+      );
+    }
+    if (data.containsKey('last_rollover_date')) {
+      context.handle(
+        _lastRolloverDateMeta,
+        lastRolloverDate.isAcceptableOrUnknown(
+          data['last_rollover_date']!,
+          _lastRolloverDateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1473,6 +1593,18 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         DriftSqlType.int,
         data['${effectivePrefix}coins'],
       )!,
+      dayStartHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day_start_hour'],
+      )!,
+      resting: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}resting'],
+      )!,
+      lastRolloverDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_rollover_date'],
+      ),
     );
   }
 
@@ -1485,17 +1617,45 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
 class Profile extends DataClass implements Insertable<Profile> {
   final int id;
   final int coins;
-  const Profile({required this.id, required this.coins});
+
+  /// Giờ bắt đầu ngày mới (0–12), cho người thức khuya.
+  final int dayStartHour;
+
+  /// Bế quan: bỏ lỡ daily không bị đứt chuỗi.
+  final bool resting;
+
+  /// Ngày (logic) đã xử lý sang ngày gần nhất. Null khi chưa mở app lần nào.
+  final DateTime? lastRolloverDate;
+  const Profile({
+    required this.id,
+    required this.coins,
+    required this.dayStartHour,
+    required this.resting,
+    this.lastRolloverDate,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['coins'] = Variable<int>(coins);
+    map['day_start_hour'] = Variable<int>(dayStartHour);
+    map['resting'] = Variable<bool>(resting);
+    if (!nullToAbsent || lastRolloverDate != null) {
+      map['last_rollover_date'] = Variable<DateTime>(lastRolloverDate);
+    }
     return map;
   }
 
   ProfilesCompanion toCompanion(bool nullToAbsent) {
-    return ProfilesCompanion(id: Value(id), coins: Value(coins));
+    return ProfilesCompanion(
+      id: Value(id),
+      coins: Value(coins),
+      dayStartHour: Value(dayStartHour),
+      resting: Value(resting),
+      lastRolloverDate: lastRolloverDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastRolloverDate),
+    );
   }
 
   factory Profile.fromJson(
@@ -1506,6 +1666,11 @@ class Profile extends DataClass implements Insertable<Profile> {
     return Profile(
       id: serializer.fromJson<int>(json['id']),
       coins: serializer.fromJson<int>(json['coins']),
+      dayStartHour: serializer.fromJson<int>(json['dayStartHour']),
+      resting: serializer.fromJson<bool>(json['resting']),
+      lastRolloverDate: serializer.fromJson<DateTime?>(
+        json['lastRolloverDate'],
+      ),
     );
   }
   @override
@@ -1514,15 +1679,38 @@ class Profile extends DataClass implements Insertable<Profile> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'coins': serializer.toJson<int>(coins),
+      'dayStartHour': serializer.toJson<int>(dayStartHour),
+      'resting': serializer.toJson<bool>(resting),
+      'lastRolloverDate': serializer.toJson<DateTime?>(lastRolloverDate),
     };
   }
 
-  Profile copyWith({int? id, int? coins}) =>
-      Profile(id: id ?? this.id, coins: coins ?? this.coins);
+  Profile copyWith({
+    int? id,
+    int? coins,
+    int? dayStartHour,
+    bool? resting,
+    Value<DateTime?> lastRolloverDate = const Value.absent(),
+  }) => Profile(
+    id: id ?? this.id,
+    coins: coins ?? this.coins,
+    dayStartHour: dayStartHour ?? this.dayStartHour,
+    resting: resting ?? this.resting,
+    lastRolloverDate: lastRolloverDate.present
+        ? lastRolloverDate.value
+        : this.lastRolloverDate,
+  );
   Profile copyWithCompanion(ProfilesCompanion data) {
     return Profile(
       id: data.id.present ? data.id.value : this.id,
       coins: data.coins.present ? data.coins.value : this.coins,
+      dayStartHour: data.dayStartHour.present
+          ? data.dayStartHour.value
+          : this.dayStartHour,
+      resting: data.resting.present ? data.resting.value : this.resting,
+      lastRolloverDate: data.lastRolloverDate.present
+          ? data.lastRolloverDate.value
+          : this.lastRolloverDate,
     );
   }
 
@@ -1530,42 +1718,78 @@ class Profile extends DataClass implements Insertable<Profile> {
   String toString() {
     return (StringBuffer('Profile(')
           ..write('id: $id, ')
-          ..write('coins: $coins')
+          ..write('coins: $coins, ')
+          ..write('dayStartHour: $dayStartHour, ')
+          ..write('resting: $resting, ')
+          ..write('lastRolloverDate: $lastRolloverDate')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, coins);
+  int get hashCode =>
+      Object.hash(id, coins, dayStartHour, resting, lastRolloverDate);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Profile && other.id == this.id && other.coins == this.coins);
+      (other is Profile &&
+          other.id == this.id &&
+          other.coins == this.coins &&
+          other.dayStartHour == this.dayStartHour &&
+          other.resting == this.resting &&
+          other.lastRolloverDate == this.lastRolloverDate);
 }
 
 class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<int> id;
   final Value<int> coins;
+  final Value<int> dayStartHour;
+  final Value<bool> resting;
+  final Value<DateTime?> lastRolloverDate;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.coins = const Value.absent(),
+    this.dayStartHour = const Value.absent(),
+    this.resting = const Value.absent(),
+    this.lastRolloverDate = const Value.absent(),
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
     this.coins = const Value.absent(),
+    this.dayStartHour = const Value.absent(),
+    this.resting = const Value.absent(),
+    this.lastRolloverDate = const Value.absent(),
   });
   static Insertable<Profile> custom({
     Expression<int>? id,
     Expression<int>? coins,
+    Expression<int>? dayStartHour,
+    Expression<bool>? resting,
+    Expression<DateTime>? lastRolloverDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (coins != null) 'coins': coins,
+      if (dayStartHour != null) 'day_start_hour': dayStartHour,
+      if (resting != null) 'resting': resting,
+      if (lastRolloverDate != null) 'last_rollover_date': lastRolloverDate,
     });
   }
 
-  ProfilesCompanion copyWith({Value<int>? id, Value<int>? coins}) {
-    return ProfilesCompanion(id: id ?? this.id, coins: coins ?? this.coins);
+  ProfilesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? coins,
+    Value<int>? dayStartHour,
+    Value<bool>? resting,
+    Value<DateTime?>? lastRolloverDate,
+  }) {
+    return ProfilesCompanion(
+      id: id ?? this.id,
+      coins: coins ?? this.coins,
+      dayStartHour: dayStartHour ?? this.dayStartHour,
+      resting: resting ?? this.resting,
+      lastRolloverDate: lastRolloverDate ?? this.lastRolloverDate,
+    );
   }
 
   @override
@@ -1577,6 +1801,15 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (coins.present) {
       map['coins'] = Variable<int>(coins.value);
     }
+    if (dayStartHour.present) {
+      map['day_start_hour'] = Variable<int>(dayStartHour.value);
+    }
+    if (resting.present) {
+      map['resting'] = Variable<bool>(resting.value);
+    }
+    if (lastRolloverDate.present) {
+      map['last_rollover_date'] = Variable<DateTime>(lastRolloverDate.value);
+    }
     return map;
   }
 
@@ -1584,7 +1817,10 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   String toString() {
     return (StringBuffer('ProfilesCompanion(')
           ..write('id: $id, ')
-          ..write('coins: $coins')
+          ..write('coins: $coins, ')
+          ..write('dayStartHour: $dayStartHour, ')
+          ..write('resting: $resting, ')
+          ..write('lastRolloverDate: $lastRolloverDate')
           ..write(')'))
         .toString();
   }
@@ -1622,6 +1858,7 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<double> value,
   Value<int> streak,
   Value<bool> completed,
+  Value<bool> archived,
   Value<int> sortOrder,
   Value<DateTime> createdAt,
 });
@@ -1640,6 +1877,7 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<double> value,
   Value<int> streak,
   Value<bool> completed,
+  Value<bool> archived,
   Value<int> sortOrder,
   Value<DateTime> createdAt,
 });
@@ -1722,6 +1960,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<bool> get completed => $composableBuilder(
     column: $table.completed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archived => $composableBuilder(
+    column: $table.archived,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1815,6 +2058,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -1884,6 +2132,9 @@ class $$TasksTableAnnotationComposer
   GeneratedColumn<bool> get completed =>
       $composableBuilder(column: $table.completed, builder: (column) => column);
 
+  GeneratedColumn<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => column);
+
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
@@ -1933,6 +2184,7 @@ class $$TasksTableTableManager
                 Value<double> value = const Value.absent(),
                 Value<int> streak = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TasksCompanion(
@@ -1950,6 +2202,7 @@ class $$TasksTableTableManager
                 value: value,
                 streak: streak,
                 completed: completed,
+                archived: archived,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
               ),
@@ -1969,6 +2222,7 @@ class $$TasksTableTableManager
                 Value<double> value = const Value.absent(),
                 Value<int> streak = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TasksCompanion.insert(
@@ -1986,6 +2240,7 @@ class $$TasksTableTableManager
                 value: value,
                 streak: streak,
                 completed: completed,
+                archived: archived,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
               ),
@@ -2282,10 +2537,16 @@ typedef $$TaskLogsTableProcessedTableManager =
 typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
   Value<int> coins,
+  Value<int> dayStartHour,
+  Value<bool> resting,
+  Value<DateTime?> lastRolloverDate,
 });
 typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
   Value<int> coins,
+  Value<int> dayStartHour,
+  Value<bool> resting,
+  Value<DateTime?> lastRolloverDate,
 });
 
 class $$ProfilesTableFilterComposer
@@ -2304,6 +2565,21 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<int> get coins => $composableBuilder(
     column: $table.coins,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dayStartHour => $composableBuilder(
+    column: $table.dayStartHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get resting => $composableBuilder(
+    column: $table.resting,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastRolloverDate => $composableBuilder(
+    column: $table.lastRolloverDate,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2326,6 +2602,21 @@ class $$ProfilesTableOrderingComposer
     column: $table.coins,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get dayStartHour => $composableBuilder(
+    column: $table.dayStartHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get resting => $composableBuilder(
+    column: $table.resting,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastRolloverDate => $composableBuilder(
+    column: $table.lastRolloverDate,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProfilesTableAnnotationComposer
@@ -2342,6 +2633,19 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<int> get coins =>
       $composableBuilder(column: $table.coins, builder: (column) => column);
+
+  GeneratedColumn<int> get dayStartHour => $composableBuilder(
+    column: $table.dayStartHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get resting =>
+      $composableBuilder(column: $table.resting, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastRolloverDate => $composableBuilder(
+    column: $table.lastRolloverDate,
+    builder: (column) => column,
+  );
 }
 
 class $$ProfilesTableTableManager
@@ -2370,14 +2674,34 @@ class $$ProfilesTableTableManager
               $$ProfilesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$ProfilesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<int> coins = const Value.absent(),
-          }) => ProfilesCompanion(id: id, coins: coins),
-          createCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<int> coins = const Value.absent(),
-          }) => ProfilesCompanion.insert(id: id, coins: coins),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> coins = const Value.absent(),
+                Value<int> dayStartHour = const Value.absent(),
+                Value<bool> resting = const Value.absent(),
+                Value<DateTime?> lastRolloverDate = const Value.absent(),
+              }) => ProfilesCompanion(
+                id: id,
+                coins: coins,
+                dayStartHour: dayStartHour,
+                resting: resting,
+                lastRolloverDate: lastRolloverDate,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> coins = const Value.absent(),
+                Value<int> dayStartHour = const Value.absent(),
+                Value<bool> resting = const Value.absent(),
+                Value<DateTime?> lastRolloverDate = const Value.absent(),
+              }) => ProfilesCompanion.insert(
+                id: id,
+                coins: coins,
+                dayStartHour: dayStartHour,
+                resting: resting,
+                lastRolloverDate: lastRolloverDate,
+              ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (

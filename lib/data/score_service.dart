@@ -22,14 +22,22 @@ class ScoreService {
           .watchSingle()
           .map((p) => p.coins);
 
-  /// Số lần hoàn thành hôm nay của từng task (taskId → số lần).
-  ///
-  /// Mốc "hôm nay" chốt lúc tạo stream; bước 1.3 sẽ làm mới khi qua ngày.
-  Stream<Map<int, int>> watchTodayCounts() {
+  /// Số lần hoàn thành từ đầu ngày logic hiện tại. Dùng cho test và chỗ
+  /// không cần stream; màn hình dùng [watchCountsSince].
+  Future<Map<int, int>> todayCounts() async {
+    final profile = await (_db.select(_db.profiles)
+          ..where((p) => p.id.equals(profileId)))
+        .getSingle();
+    return watchCountsSince(todayStart(_clock(), profile.dayStartHour)).first;
+  }
+
+  /// Số lần hoàn thành của từng task (taskId → số lần) kể từ [since].
+  /// Màn hình truyền mốc đầu ngày logic, và tạo stream mới khi sang ngày.
+  Stream<Map<int, int>> watchCountsSince(DateTime since) {
     final count = _db.taskLogs.id.count();
     final query = _db.selectOnly(_db.taskLogs)
       ..addColumns([_db.taskLogs.taskId, count])
-      ..where(_completedToday())
+      ..where(_completedSince(since))
       ..groupBy([_db.taskLogs.taskId]);
     return query.watch().map((rows) => {
           for (final row in rows)
@@ -165,15 +173,19 @@ class ScoreService {
     await _setCoins(await _coins() + delta);
   }
 
-  Expression<bool> _completedToday() =>
+  Expression<bool> _completedSince(DateTime since) =>
       _db.taskLogs.kind.equalsValue(LogKind.complete) &
-      _db.taskLogs.createdAt.isBiggerOrEqualValue(startOfDay(_clock()));
+      _db.taskLogs.createdAt.isBiggerOrEqualValue(since);
 
   Future<int> _todayCount(int taskId) async {
+    final profile = await (_db.select(_db.profiles)
+          ..where((p) => p.id.equals(profileId)))
+        .getSingle();
+    final since = todayStart(_clock(), profile.dayStartHour);
     final count = _db.taskLogs.id.count();
     final query = _db.selectOnly(_db.taskLogs)
       ..addColumns([count])
-      ..where(_completedToday() & _db.taskLogs.taskId.equals(taskId));
+      ..where(_completedSince(since) & _db.taskLogs.taskId.equals(taskId));
     return (await query.getSingle()).read(count)!;
   }
 

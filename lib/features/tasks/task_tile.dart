@@ -16,6 +16,7 @@ class TaskTile extends StatelessWidget {
     super.key,
     required this.task,
     required this.todayCount,
+    this.restDay = false,
     required this.onTap,
     required this.onCheck,
     required this.onBad,
@@ -26,6 +27,9 @@ class TaskTile extends StatelessWidget {
 
   /// Số lần thói quen tốt đã làm hôm nay.
   final int todayCount;
+
+  /// Daily không phải làm hôm nay theo lịch lặp: hiện mờ, vẫn tick được.
+  final bool restDay;
 
   /// Mở form sửa.
   final VoidCallback onTap;
@@ -51,7 +55,7 @@ class TaskTile extends StatelessWidget {
     final color = element?.color ?? rewardColor;
     final done = isTaskDone(task, todayCount);
 
-    return Card(
+    final card = Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         onTap: onTap,
@@ -97,10 +101,12 @@ class TaskTile extends StatelessWidget {
         },
       ),
     );
+    return restDay && !done ? Opacity(opacity: 0.55, child: card) : card;
   }
 
   String _subtitle() {
     final parts = <String>[
+      if (restDay) 'Hôm nay nghỉ',
       if (task.element != null) task.element!.label,
       switch (task.type) {
         TaskType.habit when task.habitUp =>

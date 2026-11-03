@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:linh_thu_ky_luat/data/database.dart';
+import 'package:linh_thu_ky_luat/data/profile_repository.dart';
 import 'package:linh_thu_ky_luat/data/score_service.dart';
 
 import '../helpers.dart';
@@ -70,7 +71,7 @@ void main() {
 
     expect(second.coinsDelta, 10); // 10 × 0.9747 = 9.7
     expect(await coins(), 20);
-    expect(await service.watchTodayCounts().first, {id: 2});
+    expect(await service.todayCounts(), {id: 2});
     await expectLater(service.score(id), throwsStateError);
     expect(await coins(), 20);
   });
@@ -85,13 +86,28 @@ void main() {
     expect(await coins(), 20);
   });
 
+  test('giờ bắt đầu ngày 4:00: 3 giờ sáng vẫn tính là hôm trước', () async {
+    await ProfileRepository(db).setDayStartHour(4);
+    final id = await addTask(TaskType.habit);
+
+    now = DateTime(2026, 11, 3, 23);
+    await service.score(id);
+
+    now = DateTime(2026, 11, 4, 3, 59);
+    await expectLater(service.score(id), throwsStateError);
+
+    now = DateTime(2026, 11, 4, 4);
+    await service.score(id);
+    expect(await coins(), 20);
+  });
+
   test('bỏ tick thói quen thì trả lại một lần trong ngày', () async {
     final id = await addTask(TaskType.habit);
     await service.score(id);
     await service.uncheck(id);
 
     expect(await coins(), 0);
-    expect(await service.watchTodayCounts().first, isEmpty);
+    expect(await service.todayCounts(), isEmpty);
     await service.score(id);
     expect(await coins(), 10);
   });
@@ -101,7 +117,7 @@ void main() {
     for (var i = 0; i < 3; i++) {
       await service.score(id, up: false);
     }
-    expect(await service.watchTodayCounts().first, isEmpty);
+    expect(await service.todayCounts(), isEmpty);
   });
 
   test('thói quen xấu: không trừ xu, hoàn tác được', () async {

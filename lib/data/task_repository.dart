@@ -7,8 +7,10 @@ class TaskRepository {
 
   final AppDatabase _db;
 
+  /// Các task đang hiện (bỏ việc cần làm đã cất).
   Stream<List<Task>> watchAll() {
     final query = _db.select(_db.tasks)
+      ..where((t) => t.archived.not())
       ..orderBy([
         (t) => OrderingTerm(expression: t.sortOrder),
         (t) => OrderingTerm(expression: t.id),

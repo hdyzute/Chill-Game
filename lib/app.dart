@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
+import 'shell/day_watcher.dart';
 import 'shell/home_shell.dart';
 
 class LinhThuApp extends StatelessWidget {
@@ -13,7 +14,7 @@ class LinhThuApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      home: const HomeShell(),
+      home: const DayWatcher(child: HomeShell()),
     );
   }
 }
