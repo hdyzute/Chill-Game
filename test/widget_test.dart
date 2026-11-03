@@ -7,6 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:linh_thu_ky_luat/app.dart';
 import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:linh_thu_ky_luat/data/providers.dart';
+import 'package:linh_thu_ky_luat/data/score_service.dart';
+
+import 'helpers.dart';
 
 void main() {
   late AppDatabase db;
@@ -18,11 +21,29 @@ void main() {
 
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db)],
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        scoreServiceProvider
+            .overrideWithValue(ScoreService(db, random: NoCritRandom())),
+      ],
       child: const LinhThuApp(),
     ));
     await tester.pumpAndSettle();
   }
+
+  Future<void> addTask(String title, TaskType type,
+          {int cost = 0, int dailyTarget = 1}) =>
+      db.into(db.tasks).insert(TasksCompanion.insert(
+            title: title,
+            type: type,
+            difficulty: Difficulty.easy,
+            element: Value(type == TaskType.reward ? null : TaskElement.fire),
+            cost: Value(cost),
+            dailyTarget: Value(dailyTarget),
+          ));
+
+  String coinsShown(WidgetTester tester) =>
+      tester.widget<Text>(find.byKey(const Key('coins'))).data!;
 
   // Gỡ cây widget, pump một nhịp để Drift hủy stream, rồi mới đóng DB.
   // Đóng trước khi pump thì close() chờ mãi trong fake async.
@@ -58,6 +79,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nhập tên nhé'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('tick daily được xu, bấm Hoàn tác thì trả lại', (tester) async {
+    await addTask('Chạy bộ', TaskType.daily);
+    await pumpApp(tester);
+    expect(coinsShown(tester), '0');
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    expect(coinsShown(tester), '10');
+    expect(find.text('+10 xu · chuỗi 1 ngày'), findsOneWidget);
+    expect(find.textContaining('Chuỗi 1 ngày'), findsOneWidget);
+
+    await tester.tap(find.text('Hoàn tác'));
+    await tester.pumpAndSettle();
+    expect(coinsShown(tester), '0');
+    expect(find.byTooltip('Hoàn thành'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('thói quen 2 lần/ngày: vòng tiến độ rồi thành dấu tick',
+      (tester) async {
+    await addTask('Uống nước', TaskType.habit, dailyTarget: 2);
+    await pumpApp(tester);
+    expect(find.textContaining('0/2 lần hôm nay'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1/2 lần hôm nay'), findsOneWidget);
+    expect(find.text('+10 xu · 1/2 hôm nay'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('2/2 lần hôm nay'), findsOneWidget);
+    expect(find.byTooltip('Bỏ tick'), findsOneWidget);
+    expect(coinsShown(tester), '20');
+
+    // Đã đủ: bấm lần nữa là bỏ tick lần gần nhất, không cộng thêm xu.
+    await tester.tap(find.byTooltip('Bỏ tick'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1/2 lần hôm nay'), findsOneWidget);
+    expect(coinsShown(tester), '10');
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('không đủ xu thì không mua được phần thưởng', (tester) async {
+    await addTask('Xem phim', TaskType.reward, cost: 30);
+    await pumpApp(tester);
+
+    await tester.tap(find.text('30'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa đủ xu: cần 30, bạn đang có 0'), findsOneWidget);
+    expect(coinsShown(tester), '0');
 
     await tearDownApp(tester);
   });

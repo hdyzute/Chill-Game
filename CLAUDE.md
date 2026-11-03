@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-"Linh Thú Kỷ Luật" is a **habit-tracker app with a virtual pet**, built with Flutter and targeting Android first. [PLAN.md](PLAN.md) (in Vietnamese) holds the product design, the mechanics borrowed from Habitica, the tech stack and the phased roadmap. Read it before starting any work, and follow its phase order. Phase 0 (scaffold) is done. Phase 1 step 1.1 (task CRUD on the Today tab) is done; ticking, streaks and scoring are not built yet. The Pet, History and Settings tabs are still placeholders.
+"Linh Thú Kỷ Luật" is a **habit-tracker app with a virtual pet**, built with Flutter and targeting Android first. [PLAN.md](PLAN.md) (in Vietnamese) holds the product design, the mechanics borrowed from Habitica, the tech stack and the phased roadmap. Read it before starting any work, and follow its phase order. Phase 0 (scaffold) is done. Phase 1 steps 1.1 (task CRUD) and 1.2 (ticking, streaks, coins, rewards, undo) are done. Day rollover is not built yet, so dailies never reset and streaks never break. The Pet, History and Settings tabs are still placeholders.
 
 ## Commands
 
@@ -19,24 +19,29 @@ flutter test --plain-name "<test name>"   # one test
 flutter run                               # needs an emulator or USB phone
 flutter build apk --debug
 dart run build_runner build               # regenerate lib/data/database.g.dart after changing tables
+dart run drift_dev make-migrations        # after bumping schemaVersion: dumps schema, writes steps + migration test
 ```
 
-`database.g.dart` is generated but committed, so the app builds without running `build_runner` first.
+`database.g.dart` and `database.steps.dart` are generated but committed, so the app builds without running `build_runner` first. `drift_schemas/` holds one JSON snapshot per schema version; never edit or delete them, because migration tests are generated from them.
 
 ## Architecture
 
 - `lib/main.dart` wraps the app in a Riverpod `ProviderScope`. `lib/app.dart` sets up the `MaterialApp` and the theme from `lib/core/theme.dart`, where a single seed colour drives the palette.
 - `lib/shell/home_shell.dart` is the bottom `NavigationBar` holding four tabs in an `IndexedStack`: Hôm nay, Linh thú, Lịch sử, Cài đặt.
 - Feature code goes in `lib/features/<feature>/` (`tasks`, `pet`, `history`, `settings`). Widgets shared across features go in `lib/shared/`.
-- `lib/data/` is the storage layer. `database.dart` defines the Drift tables (currently only `Tasks`, generating the `Task` row class and `TasksCompanion`). Enums are stored with `textEnum`, by name, so reordering them is safe but renaming a value needs a migration. `task_enums.dart` holds `TaskType`, `Difficulty` (with its reward multiplier), `TaskElement` (Hỏa/Thủy/Mộc) and the weekday bitmask helpers. `TaskRepository` wraps queries, and `providers.dart` exposes `databaseProvider`, `taskRepositoryProvider` and the `tasksProvider` stream.
+- `lib/domain/scoring.dart` is the pure scoring formula, adapted from Habitica's `scoreTask.js`: reward = `0.9747^value × difficulty × crit × (1 + streak/100) × 10` coins. It takes the random crit roll as a parameter so tests stay deterministic.
+- Good habits are capped by `Tasks.dailyTarget` (default 1): `ScoreService.score` throws `StateError` once today's `complete` logs reach it, so coins cannot be farmed by tapping repeatedly. Bad habits (`up: false`) are uncapped and give no coins. "Today" is defined only by `lib/domain/day.dart`. `ScoreService` takes a `clock` and stamps log `createdAt` from it rather than SQLite's time, so tests can move across days.
+- `lib/data/score_service.dart` applies scores to the database. Every score writes a `TaskLog` row with the exact deltas, inside one transaction; undo (the snackbar's "Hoàn tác" or unticking) reverses that row and deletes it. Never change `coins`, `value`, `streak` or `completed` outside `ScoreService`, or undo stops being exact.
+- `lib/data/` is the storage layer. `database.dart` defines the Drift tables: `Tasks` (row class `Task`), `TaskLogs` (scoring history, no foreign key so it survives task deletion) and `Profiles` (a single row, `profileId`, holding the coin wallet, created in `beforeOpen`). Enums are stored with `textEnum`, by name, so reordering them is safe but renaming a value needs a migration. `task_enums.dart` holds `TaskType`, `Difficulty` (with its reward multiplier), `TaskElement` (Hỏa/Thủy/Mộc) and the weekday bitmask helpers. `TaskRepository` wraps queries, and `providers.dart` exposes `databaseProvider`, `taskRepositoryProvider` and the `tasksProvider` stream.
 - One `Tasks` table holds all four task types; type-specific columns (`habitUp`/`habitDown`, `repeatDays`, `cost`) are ignored for other types. Scoring columns (`value`, `streak`, `completed`) already exist for step 1.2.
 - UI watches `tasksProvider` and writes through `taskRepositoryProvider`. It never touches `AppDatabase` directly. Colours and icons per element or type live in `features/tasks/task_style.dart`.
-- Bumping `schemaVersion` requires adding a `MigrationStrategy` to `AppDatabase`, because users already have version 1 on their phones.
+- Schema changes: users already have older schema versions on their phones. Bump `schemaVersion`, run `build_runner` then `make-migrations`, add a `fromXToY` step in `AppDatabase.migration`, and extend `test/drift/app_database/migration_test.dart` with a data-integrity case.
 - Planned but not yet added: `flutter_local_notifications` for reminders, and Rive for pet animation.
 
 ## Testing
 
-- Tests use an in-memory database: `AppDatabase(NativeDatabase.memory())`. Widget tests inject it with `databaseProvider.overrideWithValue(db)`.
+- Tests use an in-memory database: `AppDatabase(NativeDatabase.memory())`. Widget tests inject it with `databaseProvider.overrideWithValue(db)`, and also override `scoreServiceProvider` with `ScoreService(db, random: NoCritRandom())` from `test/helpers.dart`. Otherwise the 3% crit makes coin assertions flaky.
+- In this Flutter version a `SnackBar` with an action stays on screen until dismissed. Pass `persist: false` for snackbars that should time out.
 - At the end of a widget test, unmount the tree, `pump(Duration.zero)`, and only then `db.close()`. Closing first makes `close()` wait forever under fake async, and the whole test run hangs with no output. Use the `tearDownApp` helper in `test/widget_test.dart`.
 - A hung test leaves `flutter_tester.exe` holding `build/native_assets/windows/sqlite3.dll`, and every later `flutter test` fails until that process exits.
 

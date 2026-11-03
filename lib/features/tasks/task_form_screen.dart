@@ -27,6 +27,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   late TaskElement _element;
   late bool _habitUp;
   late bool _habitDown;
+  late int _dailyTarget;
   late int _repeatDays;
 
   bool get _isEditing => widget.task != null;
@@ -43,6 +44,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _element = t?.element ?? TaskElement.fire;
     _habitUp = t?.habitUp ?? true;
     _habitDown = t?.habitDown ?? false;
+    _dailyTarget = t?.dailyTarget ?? 1;
     _repeatDays = t?.repeatDays ?? everyDayMask;
   }
 
@@ -179,6 +181,39 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 ),
               ],
             ),
+            if (_habitUp) ...[
+              _SectionLabel('Số lần mỗi ngày'),
+              Row(
+                children: [
+                  IconButton.outlined(
+                    tooltip: 'Bớt một lần',
+                    icon: const Icon(Icons.remove),
+                    onPressed: _dailyTarget > 1
+                        ? () => setState(() => _dailyTarget--)
+                        : null,
+                  ),
+                  SizedBox(
+                    width: 48,
+                    child: Text('$_dailyTarget',
+                        key: const Key('dailyTarget'),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleLarge),
+                  ),
+                  IconButton.outlined(
+                    tooltip: 'Thêm một lần',
+                    icon: const Icon(Icons.add),
+                    onPressed: _dailyTarget < maxDailyTarget
+                        ? () => setState(() => _dailyTarget++)
+                        : null,
+                  ),
+                ],
+              ),
+              Text(
+                'Được thưởng tối đa $_dailyTarget lần mỗi ngày. '
+                'Ví dụ: uống nước 8 lần.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
           ],
         TaskType.daily => [
             _SectionLabel('Lặp lại vào'),
@@ -238,6 +273,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       element: Value(_type == TaskType.reward ? null : _element),
       habitUp: Value(_habitUp),
       habitDown: Value(_habitDown),
+      dailyTarget: Value(_dailyTarget),
       repeatDays: Value(_repeatDays),
       cost: Value(int.tryParse(_cost.text) ?? 0),
     );

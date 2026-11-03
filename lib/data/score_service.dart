@@ -1,0 +1,184 @@
+import 'dart:math';
+
+import 'package:drift/drift.dart';
+
+import '../domain/day.dart';
+import '../domain/scoring.dart';
+import 'database.dart';
+
+/// Chấm điểm task và quản lý ví. Mọi thay đổi chạy trong một transaction,
+/// và mỗi lần chấm ghi một [TaskLog] để hoàn tác chính xác.
+class ScoreService {
+  ScoreService(this._db, {Random? random, DateTime Function()? clock})
+      : _random = random ?? Random(),
+        _clock = clock ?? DateTime.now;
+
+  final AppDatabase _db;
+  final Random _random;
+  final DateTime Function() _clock;
+
+  Stream<int> watchCoins() =>
+      (_db.select(_db.profiles)..where((p) => p.id.equals(profileId)))
+          .watchSingle()
+          .map((p) => p.coins);
+
+  /// Số lần hoàn thành hôm nay của từng task (taskId → số lần).
+  ///
+  /// Mốc "hôm nay" chốt lúc tạo stream; bước 1.3 sẽ làm mới khi qua ngày.
+  Stream<Map<int, int>> watchTodayCounts() {
+    final count = _db.taskLogs.id.count();
+    final query = _db.selectOnly(_db.taskLogs)
+      ..addColumns([_db.taskLogs.taskId, count])
+      ..where(_completedToday())
+      ..groupBy([_db.taskLogs.taskId]);
+    return query.watch().map((rows) => {
+          for (final row in rows)
+            row.read(_db.taskLogs.taskId)!: row.read(count)!,
+        });
+  }
+
+  /// Làm xong task ([up]), hoặc làm thói quen xấu (`up: false`).
+  Future<TaskLog> score(int taskId, {bool up = true}) {
+    return _db.transaction(() async {
+      final task = await _task(taskId);
+      if (task.type == TaskType.reward) {
+        throw ArgumentError('Phần thưởng dùng buyReward');
+      }
+      final checkable = task.type != TaskType.habit;
+      if (checkable && (!up || task.completed)) {
+        throw StateError('"${task.title}" không chấm được lúc này');
+      }
+      if (!checkable && up && await _todayCount(taskId) >= task.dailyTarget) {
+        throw StateError('"${task.title}" đã đủ số lần hôm nay');
+      }
+
+      final outcome = Scoring.score(
+        type: task.type,
+        difficulty: task.difficulty,
+        value: task.value,
+        streak: task.streak,
+        up: up,
+        critRoll: _random.nextDouble(),
+      );
+
+      await _updateTask(
+        taskId,
+        TasksCompanion(
+          value: Value(task.value + outcome.valueDelta),
+          streak: Value(task.streak + outcome.streakDelta),
+          completed: Value(checkable || task.completed),
+        ),
+      );
+      await _addCoins(outcome.coinsDelta);
+      return _insertLog(TaskLogsCompanion.insert(
+        taskId: taskId,
+        kind: up ? LogKind.complete : LogKind.bad,
+        valueDelta: Value(outcome.valueDelta),
+        coinsDelta: Value(outcome.coinsDelta),
+        streakDelta: Value(outcome.streakDelta),
+        critical: Value(outcome.critical),
+      ));
+    });
+  }
+
+  /// Đổi xu lấy phần thưởng. Trả về null nếu chưa đủ xu.
+  Future<TaskLog?> buyReward(int taskId) {
+    return _db.transaction(() async {
+      final task = await _task(taskId);
+      if (task.type != TaskType.reward) {
+        throw ArgumentError('"${task.title}" không phải phần thưởng');
+      }
+      if (await _coins() < task.cost) return null;
+
+      await _addCoins(-task.cost);
+      return _insertLog(TaskLogsCompanion.insert(
+        taskId: taskId,
+        kind: LogKind.purchase,
+        coinsDelta: Value(-task.cost),
+      ));
+    });
+  }
+
+  /// Hoàn tác đúng phần đã cộng trong [logId], rồi xóa dòng nhật ký đó.
+  Future<void> undo(int logId) {
+    return _db.transaction(() async {
+      final log = await (_db.select(_db.taskLogs)
+            ..where((l) => l.id.equals(logId)))
+          .getSingleOrNull();
+      if (log == null) return;
+
+      final task = await (_db.select(_db.tasks)
+            ..where((t) => t.id.equals(log.taskId)))
+          .getSingleOrNull();
+      // Task đã bị xóa thì chỉ hoàn lại xu.
+      if (task != null) {
+        await _updateTask(
+          task.id,
+          TasksCompanion(
+            value: Value(task.value - log.valueDelta),
+            streak: Value(task.streak - log.streakDelta),
+            completed: Value(
+                log.kind == LogKind.complete && task.type != TaskType.habit
+                    ? false
+                    : task.completed),
+          ),
+        );
+      }
+      // Lỡ tiêu xu rồi mới hoàn tác thì không để ví âm.
+      final coins = await _coins();
+      await _setCoins(max(0, coins - log.coinsDelta));
+      await (_db.delete(_db.taskLogs)..where((l) => l.id.equals(logId))).go();
+    });
+  }
+
+  /// Bỏ tick daily hoặc việc cần làm: hoàn tác lần hoàn thành gần nhất.
+  Future<void> uncheck(int taskId) async {
+    final last = await (_db.select(_db.taskLogs)
+          ..where((l) => l.taskId.equals(taskId) & l.kind.equalsValue(LogKind.complete))
+          ..orderBy([(l) => OrderingTerm.desc(l.id)])
+          ..limit(1))
+        .getSingleOrNull();
+    if (last != null) {
+      await undo(last.id);
+    } else {
+      await _updateTask(taskId, const TasksCompanion(completed: Value(false)));
+    }
+  }
+
+  Future<Task> _task(int id) =>
+      (_db.select(_db.tasks)..where((t) => t.id.equals(id))).getSingle();
+
+  Future<void> _updateTask(int id, TasksCompanion fields) =>
+      (_db.update(_db.tasks)..where((t) => t.id.equals(id))).write(fields);
+
+  Future<int> _coins() async =>
+      (await (_db.select(_db.profiles)..where((p) => p.id.equals(profileId)))
+              .getSingle())
+          .coins;
+
+  Future<void> _setCoins(int coins) =>
+      (_db.update(_db.profiles)..where((p) => p.id.equals(profileId)))
+          .write(ProfilesCompanion(coins: Value(coins)));
+
+  Future<void> _addCoins(int delta) async {
+    if (delta == 0) return;
+    await _setCoins(await _coins() + delta);
+  }
+
+  Expression<bool> _completedToday() =>
+      _db.taskLogs.kind.equalsValue(LogKind.complete) &
+      _db.taskLogs.createdAt.isBiggerOrEqualValue(startOfDay(_clock()));
+
+  Future<int> _todayCount(int taskId) async {
+    final count = _db.taskLogs.id.count();
+    final query = _db.selectOnly(_db.taskLogs)
+      ..addColumns([count])
+      ..where(_completedToday() & _db.taskLogs.taskId.equals(taskId));
+    return (await query.getSingle()).read(count)!;
+  }
+
+  // Ghi giờ theo _clock (không dùng giờ của SQLite) để "hôm nay" khớp nhau.
+  Future<TaskLog> _insertLog(TaskLogsCompanion log) => _db
+      .into(_db.taskLogs)
+      .insertReturning(log.copyWith(createdAt: Value(_clock())));
+}

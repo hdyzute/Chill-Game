@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'database.steps.dart';
 import 'task_enums.dart';
 
 export 'task_enums.dart';
@@ -21,6 +22,9 @@ class Tasks extends Table {
   BoolColumn get habitUp => boolean().withDefault(const Constant(true))();
   BoolColumn get habitDown => boolean().withDefault(const Constant(false))();
 
+  /// Thói quen tốt: số lần được thưởng mỗi ngày, chống bấm liên tục để cày xu.
+  IntColumn get dailyTarget => integer().withDefault(const Constant(1))();
+
   /// Hằng ngày: các ngày lặp, xem [weekdayLabels].
   IntColumn get repeatDays =>
       integer().withDefault(const Constant(everyDayMask))();
@@ -37,11 +41,55 @@ class Tasks extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [Tasks])
+/// Mỗi lần chấm điểm một dòng. Lưu đúng phần đã cộng để bỏ tick hoàn lại
+/// chính xác. Không dùng khóa ngoại: xóa task vẫn giữ lịch sử.
+class TaskLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get taskId => integer()();
+  TextColumn get kind => textEnum<LogKind>()();
+  RealColumn get valueDelta => real().withDefault(const Constant(0))();
+  IntColumn get coinsDelta => integer().withDefault(const Constant(0))();
+  IntColumn get streakDelta => integer().withDefault(const Constant(0))();
+  BoolColumn get critical => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Một dòng duy nhất (id = [profileId]) giữ ví của người dùng.
+class Profiles extends Table {
+  IntColumn get id => integer()();
+  IntColumn get coins => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+const profileId = 1;
+
+@DriftDatabase(tables: [Tasks, TaskLogs, Profiles])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
+  // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: stepByStep(
+          from1To2: (m, schema) async {
+            await m.createTable(schema.taskLogs);
+            await m.createTable(schema.profiles);
+          },
+          from2To3: (m, schema) async {
+            await m.addColumn(schema.tasks, schema.tasks.dailyTarget);
+          },
+        ),
+        beforeOpen: (_) => into(profiles).insert(
+          const ProfilesCompanion(id: Value(profileId)),
+          mode: InsertMode.insertOrIgnore,
+        ),
+      );
 }

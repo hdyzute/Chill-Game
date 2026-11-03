@@ -31,6 +31,21 @@ enum TaskElement {
   final String hint;
 }
 
+/// Loại sự kiện trong nhật ký chấm điểm.
+enum LogKind {
+  /// Làm xong thói quen tốt, daily hoặc việc cần làm.
+  complete,
+
+  /// Làm thói quen xấu.
+  bad,
+
+  /// Mua phần thưởng.
+  purchase,
+}
+
+/// Giới hạn trên cho "số lần mỗi ngày" của thói quen.
+const maxDailyTarget = 20;
+
 /// Bit 0 = Thứ 2 ... bit 6 = Chủ nhật.
 const weekdayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const everyDayMask = 0x7f;
