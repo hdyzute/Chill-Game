@@ -124,6 +124,17 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     requiredDuringInsert: false,
     defaultValue: const Constant(everyDayMask),
   );
+  static const VerificationMeta _reminderMinutesMeta = const VerificationMeta(
+    'reminderMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> reminderMinutes = GeneratedColumn<int>(
+    'reminder_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _costMeta = const VerificationMeta('cost');
   @override
   late final GeneratedColumn<int> cost = GeneratedColumn<int>(
@@ -220,6 +231,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     habitDown,
     dailyTarget,
     repeatDays,
+    reminderMinutes,
     cost,
     value,
     streak,
@@ -282,6 +294,15 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       context.handle(
         _repeatDaysMeta,
         repeatDays.isAcceptableOrUnknown(data['repeat_days']!, _repeatDaysMeta),
+      );
+    }
+    if (data.containsKey('reminder_minutes')) {
+      context.handle(
+        _reminderMinutesMeta,
+        reminderMinutes.isAcceptableOrUnknown(
+          data['reminder_minutes']!,
+          _reminderMinutesMeta,
+        ),
       );
     }
     if (data.containsKey('cost')) {
@@ -381,6 +402,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         DriftSqlType.int,
         data['${effectivePrefix}repeat_days'],
       )!,
+      reminderMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reminder_minutes'],
+      ),
       cost: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}cost'],
@@ -447,6 +472,10 @@ class Task extends DataClass implements Insertable<Task> {
   /// Hằng ngày: các ngày lặp, xem [weekdayLabels].
   final int repeatDays;
 
+  /// Giờ nhắc trong ngày, tính bằng phút từ 0:00 (480 = 8:00). Null = không nhắc.
+  /// Chỉ dùng cho daily và thói quen tốt.
+  final int? reminderMinutes;
+
   /// Phần thưởng: giá bằng xu.
   final int cost;
   final double value;
@@ -468,6 +497,7 @@ class Task extends DataClass implements Insertable<Task> {
     required this.habitDown,
     required this.dailyTarget,
     required this.repeatDays,
+    this.reminderMinutes,
     required this.cost,
     required this.value,
     required this.streak,
@@ -501,6 +531,9 @@ class Task extends DataClass implements Insertable<Task> {
     map['habit_down'] = Variable<bool>(habitDown);
     map['daily_target'] = Variable<int>(dailyTarget);
     map['repeat_days'] = Variable<int>(repeatDays);
+    if (!nullToAbsent || reminderMinutes != null) {
+      map['reminder_minutes'] = Variable<int>(reminderMinutes);
+    }
     map['cost'] = Variable<int>(cost);
     map['value'] = Variable<double>(value);
     map['streak'] = Variable<int>(streak);
@@ -527,6 +560,9 @@ class Task extends DataClass implements Insertable<Task> {
       habitDown: Value(habitDown),
       dailyTarget: Value(dailyTarget),
       repeatDays: Value(repeatDays),
+      reminderMinutes: reminderMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderMinutes),
       cost: Value(cost),
       value: Value(value),
       streak: Value(streak),
@@ -559,6 +595,7 @@ class Task extends DataClass implements Insertable<Task> {
       habitDown: serializer.fromJson<bool>(json['habitDown']),
       dailyTarget: serializer.fromJson<int>(json['dailyTarget']),
       repeatDays: serializer.fromJson<int>(json['repeatDays']),
+      reminderMinutes: serializer.fromJson<int?>(json['reminderMinutes']),
       cost: serializer.fromJson<int>(json['cost']),
       value: serializer.fromJson<double>(json['value']),
       streak: serializer.fromJson<int>(json['streak']),
@@ -588,6 +625,7 @@ class Task extends DataClass implements Insertable<Task> {
       'habitDown': serializer.toJson<bool>(habitDown),
       'dailyTarget': serializer.toJson<int>(dailyTarget),
       'repeatDays': serializer.toJson<int>(repeatDays),
+      'reminderMinutes': serializer.toJson<int?>(reminderMinutes),
       'cost': serializer.toJson<int>(cost),
       'value': serializer.toJson<double>(value),
       'streak': serializer.toJson<int>(streak),
@@ -609,6 +647,7 @@ class Task extends DataClass implements Insertable<Task> {
     bool? habitDown,
     int? dailyTarget,
     int? repeatDays,
+    Value<int?> reminderMinutes = const Value.absent(),
     int? cost,
     double? value,
     int? streak,
@@ -627,6 +666,9 @@ class Task extends DataClass implements Insertable<Task> {
     habitDown: habitDown ?? this.habitDown,
     dailyTarget: dailyTarget ?? this.dailyTarget,
     repeatDays: repeatDays ?? this.repeatDays,
+    reminderMinutes: reminderMinutes.present
+        ? reminderMinutes.value
+        : this.reminderMinutes,
     cost: cost ?? this.cost,
     value: value ?? this.value,
     streak: streak ?? this.streak,
@@ -653,6 +695,9 @@ class Task extends DataClass implements Insertable<Task> {
       repeatDays: data.repeatDays.present
           ? data.repeatDays.value
           : this.repeatDays,
+      reminderMinutes: data.reminderMinutes.present
+          ? data.reminderMinutes.value
+          : this.reminderMinutes,
       cost: data.cost.present ? data.cost.value : this.cost,
       value: data.value.present ? data.value.value : this.value,
       streak: data.streak.present ? data.streak.value : this.streak,
@@ -676,6 +721,7 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('habitDown: $habitDown, ')
           ..write('dailyTarget: $dailyTarget, ')
           ..write('repeatDays: $repeatDays, ')
+          ..write('reminderMinutes: $reminderMinutes, ')
           ..write('cost: $cost, ')
           ..write('value: $value, ')
           ..write('streak: $streak, ')
@@ -699,6 +745,7 @@ class Task extends DataClass implements Insertable<Task> {
     habitDown,
     dailyTarget,
     repeatDays,
+    reminderMinutes,
     cost,
     value,
     streak,
@@ -721,6 +768,7 @@ class Task extends DataClass implements Insertable<Task> {
           other.habitDown == this.habitDown &&
           other.dailyTarget == this.dailyTarget &&
           other.repeatDays == this.repeatDays &&
+          other.reminderMinutes == this.reminderMinutes &&
           other.cost == this.cost &&
           other.value == this.value &&
           other.streak == this.streak &&
@@ -741,6 +789,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<bool> habitDown;
   final Value<int> dailyTarget;
   final Value<int> repeatDays;
+  final Value<int?> reminderMinutes;
   final Value<int> cost;
   final Value<double> value;
   final Value<int> streak;
@@ -759,6 +808,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.habitDown = const Value.absent(),
     this.dailyTarget = const Value.absent(),
     this.repeatDays = const Value.absent(),
+    this.reminderMinutes = const Value.absent(),
     this.cost = const Value.absent(),
     this.value = const Value.absent(),
     this.streak = const Value.absent(),
@@ -778,6 +828,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.habitDown = const Value.absent(),
     this.dailyTarget = const Value.absent(),
     this.repeatDays = const Value.absent(),
+    this.reminderMinutes = const Value.absent(),
     this.cost = const Value.absent(),
     this.value = const Value.absent(),
     this.streak = const Value.absent(),
@@ -799,6 +850,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<bool>? habitDown,
     Expression<int>? dailyTarget,
     Expression<int>? repeatDays,
+    Expression<int>? reminderMinutes,
     Expression<int>? cost,
     Expression<double>? value,
     Expression<int>? streak,
@@ -818,6 +870,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (habitDown != null) 'habit_down': habitDown,
       if (dailyTarget != null) 'daily_target': dailyTarget,
       if (repeatDays != null) 'repeat_days': repeatDays,
+      if (reminderMinutes != null) 'reminder_minutes': reminderMinutes,
       if (cost != null) 'cost': cost,
       if (value != null) 'value': value,
       if (streak != null) 'streak': streak,
@@ -839,6 +892,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Value<bool>? habitDown,
     Value<int>? dailyTarget,
     Value<int>? repeatDays,
+    Value<int?>? reminderMinutes,
     Value<int>? cost,
     Value<double>? value,
     Value<int>? streak,
@@ -858,6 +912,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       habitDown: habitDown ?? this.habitDown,
       dailyTarget: dailyTarget ?? this.dailyTarget,
       repeatDays: repeatDays ?? this.repeatDays,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
       cost: cost ?? this.cost,
       value: value ?? this.value,
       streak: streak ?? this.streak,
@@ -907,6 +962,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (repeatDays.present) {
       map['repeat_days'] = Variable<int>(repeatDays.value);
     }
+    if (reminderMinutes.present) {
+      map['reminder_minutes'] = Variable<int>(reminderMinutes.value);
+    }
     if (cost.present) {
       map['cost'] = Variable<int>(cost.value);
     }
@@ -944,6 +1002,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('habitDown: $habitDown, ')
           ..write('dailyTarget: $dailyTarget, ')
           ..write('repeatDays: $repeatDays, ')
+          ..write('reminderMinutes: $reminderMinutes, ')
           ..write('cost: $cost, ')
           ..write('value: $value, ')
           ..write('streak: $streak, ')
@@ -1854,6 +1913,7 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<bool> habitDown,
   Value<int> dailyTarget,
   Value<int> repeatDays,
+  Value<int?> reminderMinutes,
   Value<int> cost,
   Value<double> value,
   Value<int> streak,
@@ -1873,6 +1933,7 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<bool> habitDown,
   Value<int> dailyTarget,
   Value<int> repeatDays,
+  Value<int?> reminderMinutes,
   Value<int> cost,
   Value<double> value,
   Value<int> streak,
@@ -1940,6 +2001,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<int> get repeatDays => $composableBuilder(
     column: $table.repeatDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reminderMinutes => $composableBuilder(
+    column: $table.reminderMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2038,6 +2104,11 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get reminderMinutes => $composableBuilder(
+    column: $table.reminderMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get cost => $composableBuilder(
     column: $table.cost,
     builder: (column) => ColumnOrderings(column),
@@ -2120,6 +2191,11 @@ class $$TasksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get reminderMinutes => $composableBuilder(
+    column: $table.reminderMinutes,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get cost =>
       $composableBuilder(column: $table.cost, builder: (column) => column);
 
@@ -2180,6 +2256,7 @@ class $$TasksTableTableManager
                 Value<bool> habitDown = const Value.absent(),
                 Value<int> dailyTarget = const Value.absent(),
                 Value<int> repeatDays = const Value.absent(),
+                Value<int?> reminderMinutes = const Value.absent(),
                 Value<int> cost = const Value.absent(),
                 Value<double> value = const Value.absent(),
                 Value<int> streak = const Value.absent(),
@@ -2198,6 +2275,7 @@ class $$TasksTableTableManager
                 habitDown: habitDown,
                 dailyTarget: dailyTarget,
                 repeatDays: repeatDays,
+                reminderMinutes: reminderMinutes,
                 cost: cost,
                 value: value,
                 streak: streak,
@@ -2218,6 +2296,7 @@ class $$TasksTableTableManager
                 Value<bool> habitDown = const Value.absent(),
                 Value<int> dailyTarget = const Value.absent(),
                 Value<int> repeatDays = const Value.absent(),
+                Value<int?> reminderMinutes = const Value.absent(),
                 Value<int> cost = const Value.absent(),
                 Value<double> value = const Value.absent(),
                 Value<int> streak = const Value.absent(),
@@ -2236,6 +2315,7 @@ class $$TasksTableTableManager
                 habitDown: habitDown,
                 dailyTarget: dailyTarget,
                 repeatDays: repeatDays,
+                reminderMinutes: reminderMinutes,
                 cost: cost,
                 value: value,
                 streak: streak,

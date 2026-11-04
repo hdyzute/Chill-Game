@@ -11,6 +11,7 @@ import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
+import 'generated/schema_v5.dart' as v5;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -181,6 +182,45 @@ void main() {
         expect(profile.dayStartHour, 0);
         expect(profile.resting, 0);
         expect(profile.lastRolloverDate, isNull);
+      },
+    );
+  });
+
+  test('nâng cấp v4 lên v5: task cũ không có giờ nhắc', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 4,
+      newVersion: 5,
+      createOld: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.tasks, const [
+          v4.TasksData(
+            id: 1,
+            title: 'Chạy bộ',
+            notes: null,
+            type: 'daily',
+            difficulty: 'medium',
+            element: 'fire',
+            habitUp: 1,
+            habitDown: 0,
+            dailyTarget: 1,
+            repeatDays: 0x15,
+            cost: 0,
+            value: 2,
+            streak: 6,
+            completed: 0,
+            archived: 0,
+            sortOrder: 0,
+            createdAt: 1793600000,
+          ),
+        ]);
+      },
+      validateItems: (newDb) async {
+        final task = await newDb.select(newDb.tasks).getSingle();
+        expect(task.title, 'Chạy bộ');
+        expect(task.streak, 6);
+        expect(task.reminderMinutes, isNull);
       },
     );
   });

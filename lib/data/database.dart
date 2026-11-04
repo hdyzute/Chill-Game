@@ -29,6 +29,10 @@ class Tasks extends Table {
   IntColumn get repeatDays =>
       integer().withDefault(const Constant(everyDayMask))();
 
+  /// Giờ nhắc trong ngày, tính bằng phút từ 0:00 (480 = 8:00). Null = không nhắc.
+  /// Chỉ dùng cho daily và thói quen tốt.
+  IntColumn get reminderMinutes => integer().nullable()();
+
   /// Phần thưởng: giá bằng xu.
   IntColumn get cost => integer().withDefault(const Constant(0))();
 
@@ -83,7 +87,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -104,6 +108,9 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(schema.profiles, schema.profiles.resting);
             await m.addColumn(
                 schema.profiles, schema.profiles.lastRolloverDate);
+          },
+          from4To5: (m, schema) async {
+            await m.addColumn(schema.tasks, schema.tasks.reminderMinutes);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

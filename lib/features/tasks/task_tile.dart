@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
+import '../../domain/reminders.dart';
 import 'task_style.dart';
 
 /// Daily và việc cần làm: xong khi đã tick. Thói quen tốt: khi đủ số lần
@@ -119,6 +120,8 @@ class TaskTile extends StatelessWidget {
       if (task.type != TaskType.reward) task.difficulty.label,
       if (task.type == TaskType.daily && task.streak > 0)
         'Chuỗi ${task.streak} ngày',
+      if (task.reminderMinutes != null)
+        'Nhắc ${formatMinutes(task.reminderMinutes!)}',
     ];
     return parts.join(' · ');
   }

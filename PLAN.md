@@ -77,7 +77,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Tick / bỏ tick (hoàn lại chính xác), streak, xu, bạo kích, mua phần thưởng (bước 1.2)
 - [x] Thói quen tốt có "số lần mỗi ngày" (mặc định 1) để không bấm liên tục cày xu
 - [x] Giờ bắt đầu ngày, xử lý sang ngày mới, đứt chuỗi khi bỏ lỡ, chế độ bế quan, cất việc cần làm đã xong (bước 1.3)
-- [ ] Thông báo nhắc giờ
+- [x] Thông báo nhắc giờ cho daily và thói quen, tự bỏ qua khi đã làm xong (bước 1.4)
 - [ ] Lịch sử và lịch tháng
 - ✅ Kiểm tra: bạn tự dùng thật 1 tuần
 

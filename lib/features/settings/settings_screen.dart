@@ -47,6 +47,17 @@ class SettingsScreen extends ConsumerWidget {
               value: p.resting,
               onChanged: repo.setResting,
             ),
+            const Divider(),
+            const ListTile(
+              leading: Icon(Icons.notifications_paused_outlined),
+              title: Text('Không nhận được nhắc nhở?'),
+              subtitle: Text(
+                'Một số máy (Xiaomi, Oppo, Huawei...) tự tắt app chạy nền. '
+                'Vào Cài đặt điện thoại → Ứng dụng → Linh Thú Kỷ Luật: '
+                'bật "Tự khởi động" và chọn "Không giới hạn" ở mục Tiết kiệm pin. '
+                'Nhắc nhở có thể trễ vài phút.',
+              ),
+            ),
           ],
         ),
       ),

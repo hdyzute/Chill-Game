@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../domain/reminders.dart';
 import 'task_style.dart';
 
 /// Tạo task mới khi [task] là null, ngược lại là sửa task đó.
@@ -29,6 +30,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   late bool _habitDown;
   late int _dailyTarget;
   late int _repeatDays;
+  int? _reminderMinutes;
+
+  /// Chỉ daily và thói quen tốt mới có nhắc nhở.
+  bool get _supportsReminder =>
+      _type == TaskType.daily || (_type == TaskType.habit && _habitUp);
 
   bool get _isEditing => widget.task != null;
 
@@ -45,6 +51,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _habitUp = t?.habitUp ?? true;
     _habitDown = t?.habitDown ?? false;
     _dailyTarget = t?.dailyTarget ?? 1;
+    _reminderMinutes = t?.reminderMinutes;
     _repeatDays = t?.repeatDays ?? everyDayMask;
   }
 
@@ -122,6 +129,30 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ),
             ..._typeSpecificFields(theme),
+            if (_supportsReminder) ...[
+              _SectionLabel('Nhắc nhở'),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(_reminderMinutes == null
+                    ? Icons.notifications_off_outlined
+                    : Icons.notifications_active_outlined),
+                title: Text(_reminderMinutes == null
+                    ? 'Không nhắc'
+                    : 'Nhắc lúc ${formatMinutes(_reminderMinutes!)}'),
+                subtitle: Text(_type == TaskType.daily
+                    ? 'Vào các ngày lặp, nếu chưa làm'
+                    : 'Mỗi ngày, nếu chưa làm đủ'),
+                trailing: _reminderMinutes == null
+                    ? null
+                    : IconButton(
+                        tooltip: 'Tắt nhắc',
+                        icon: const Icon(Icons.close),
+                        onPressed: () =>
+                            setState(() => _reminderMinutes = null),
+                      ),
+                onTap: _pickReminder,
+              ),
+            ],
             if (_type != TaskType.reward) ...[
               _SectionLabel('Hệ'),
               Wrap(
@@ -274,6 +305,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       habitUp: Value(_habitUp),
       habitDown: Value(_habitDown),
       dailyTarget: Value(_dailyTarget),
+      reminderMinutes: Value(_supportsReminder ? _reminderMinutes : null),
       repeatDays: Value(_repeatDays),
       cost: Value(int.tryParse(_cost.text) ?? 0),
     );
@@ -285,6 +317,26 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       await repo.add(fields);
     }
     if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _pickReminder() async {
+    final initial = _reminderMinutes ?? 8 * 60;
+    final picked = await showTimePicker(
+      context: context,
+      helpText: 'Giờ nhắc',
+      initialTime: TimeOfDay(hour: initial ~/ 60, minute: initial % 60),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _reminderMinutes = picked.hour * 60 + picked.minute);
+
+    final allowed =
+        await ref.read(notificationSchedulerProvider).requestPermission();
+    if (!allowed && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Bạn chưa cho phép thông báo. Vào Cài đặt điện thoại → '
+            'Ứng dụng → Linh Thú Kỷ Luật → Thông báo để bật.'),
+      ));
+    }
   }
 
   Future<void> _confirmDelete() async {

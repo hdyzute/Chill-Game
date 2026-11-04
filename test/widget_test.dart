@@ -13,10 +13,12 @@ import 'helpers.dart';
 
 void main() {
   late AppDatabase db;
+  late FakeScheduler scheduler;
 
   setUp(() {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     db = AppDatabase(NativeDatabase.memory());
+    scheduler = FakeScheduler();
   });
 
   // Thứ 3, 10 giờ sáng: cố định để lịch lặp theo thứ không phụ thuộc ngày chạy.
@@ -27,6 +29,7 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(clock),
+        notificationSchedulerProvider.overrideWithValue(scheduler),
         scoreServiceProvider.overrideWithValue(
             ScoreService(db, random: NoCritRandom(), clock: clock)),
       ],
@@ -36,12 +39,16 @@ void main() {
   }
 
   Future<void> addTask(String title, TaskType type,
-          {int cost = 0, int dailyTarget = 1, int repeatDays = everyDayMask}) =>
+          {int cost = 0,
+          int dailyTarget = 1,
+          int repeatDays = everyDayMask,
+          int? reminderMinutes}) =>
       db.into(db.tasks).insert(TasksCompanion.insert(
             title: title,
             type: type,
             difficulty: Difficulty.easy,
             repeatDays: Value(repeatDays),
+            reminderMinutes: Value(reminderMinutes),
             element: Value(type == TaskType.reward ? null : TaskElement.fire),
             cost: Value(cost),
             dailyTarget: Value(dailyTarget),
@@ -174,6 +181,27 @@ void main() {
     final profile = await db.select(db.profiles).getSingle();
     expect(profile.dayStartHour, 4);
     expect(profile.resting, isTrue);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('đặt lịch nhắc khi mở app, tick xong thì dời nhắc hôm nay',
+      (tester) async {
+    // Đồng hồ cố định Thứ 3 10:00, nhắc lúc 21:00.
+    await addTask('Đọc sách', TaskType.daily, reminderMinutes: 21 * 60);
+    await pumpApp(tester);
+
+    expect(scheduler.plans, hasLength(7));
+    expect(scheduler.plans.map((p) => p.first),
+        contains(DateTime(2026, 11, 3, 21)));
+    expect(find.textContaining('Nhắc 21:00'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    expect(scheduler.plans.map((p) => p.first),
+        isNot(contains(DateTime(2026, 11, 3, 21))));
+    expect(scheduler.plans.map((p) => p.first),
+        contains(DateTime(2026, 11, 10, 21)));
 
     await tearDownApp(tester);
   });

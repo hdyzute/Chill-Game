@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/day.dart';
+import '../domain/reminders.dart';
 import 'database.dart';
+import 'notification_scheduler.dart';
 import 'profile_repository.dart';
 import 'rollover_service.dart';
 import 'score_service.dart';
@@ -60,6 +62,25 @@ final todayProvider = Provider<DateTime?>((ref) {
   final hour = ref.watch(dayStartHourProvider);
   if (hour == null) return null;
   return logicalDate(ref.watch(clockProvider)(), hour);
+});
+
+final notificationSchedulerProvider =
+    Provider<NotificationScheduler>((ref) => LocalNotificationScheduler());
+
+/// Lịch nhắc cần đặt, tính lại khi task, số lần hôm nay hoặc ngày thay đổi.
+/// Null khi dữ liệu chưa tải xong.
+final reminderPlansProvider = Provider<List<ReminderPlan>?>((ref) {
+  final tasks = ref.watch(tasksProvider).value;
+  final counts = ref.watch(todayCountsProvider).value;
+  final hour = ref.watch(dayStartHourProvider);
+  ref.watch(dayTickProvider);
+  if (tasks == null || counts == null || hour == null) return null;
+  return planReminders(
+    tasks: tasks,
+    todayCounts: counts,
+    now: ref.watch(clockProvider)(),
+    dayStartHour: hour,
+  );
 });
 
 /// Số lần hoàn thành hôm nay của từng task (taskId → số lần).
