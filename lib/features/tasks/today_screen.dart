@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../domain/day.dart';
+import '../../domain/drops.dart';
 import 'task_form_screen.dart';
 import 'task_style.dart';
 import 'task_tile.dart';
@@ -76,7 +77,10 @@ class TodayScreen extends ConsumerWidget {
       TaskType.habit => ' · ${todayCount + 1}/${task.dailyTarget} hôm nay',
       _ => '',
     };
-    _showUndoable(context, ref, log, '${_coinsText(log)}$extra');
+    final drop = log.dropItem == null
+        ? ''
+        : ' · nhặt được ${dropLabel(log.dropItem!, log.dropCount)}';
+    _showUndoable(context, ref, log, '${_coinsText(log)}$extra$drop');
   }
 
   Future<void> _bad(BuildContext context, WidgetRef ref, Task task) async {

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 
 import '../domain/day.dart';
+import '../domain/drops.dart';
 import '../domain/scoring.dart';
 import 'database.dart';
 
@@ -16,6 +17,9 @@ class ScoreService {
   final AppDatabase _db;
   final Random _random;
   final DateTime Function() _clock;
+
+  // Dùng chung một biểu thức để đọc được cột tổng từ kết quả truy vấn.
+  late final _dropSum = _db.taskLogs.dropCount.sum();
 
   Stream<int> watchCoins() =>
       (_db.select(_db.profiles)..where((p) => p.id.equals(profileId)))
@@ -44,6 +48,18 @@ class ScoreService {
             row.read(_db.taskLogs.taskId)!: row.read(count)!,
         });
   }
+
+  /// Túi linh vật: số lượng từng loại, chỉ gồm loại đang có.
+  Stream<Map<SpiritItem, int>> watchInventory() =>
+      _db.select(_db.inventoryItems).watch().map((rows) => {
+            for (final r in rows)
+              if (r.count > 0) r.item: r.count,
+          });
+
+  /// Số linh vật nhặt được kể từ [since] (mốc đầu ngày logic).
+  Stream<int> watchDropsSince(DateTime since) => _dropsSinceQuery(since)
+      .watchSingle()
+      .map((row) => row.read(_dropSum) ?? 0);
 
   /// Làm xong task ([up]), hoặc làm thói quen xấu (`up: false`).
   Future<TaskLog> score(int taskId, {bool up = true}) {
@@ -78,6 +94,19 @@ class ScoreService {
         ),
       );
       await _addCoins(outcome.coinsDelta);
+
+      final drop = up
+          ? Drops.roll(
+              element: task.element,
+              difficulty: task.difficulty,
+              critical: outcome.critical,
+              droppedToday: await _dropsToday(),
+              dropRoll: _random.nextDouble(),
+              rareRoll: _random.nextDouble(),
+            )
+          : null;
+      if (drop != null) await _addItem(drop.item, drop.count);
+
       return _insertLog(task, TaskLogsCompanion.insert(
         taskId: taskId,
         kind: up ? LogKind.complete : LogKind.bad,
@@ -85,6 +114,8 @@ class ScoreService {
         coinsDelta: Value(outcome.coinsDelta),
         streakDelta: Value(outcome.streakDelta),
         critical: Value(outcome.critical),
+        dropItem: Value(drop?.item),
+        dropCount: Value(drop?.count ?? 0),
       ));
     });
   }
@@ -135,6 +166,10 @@ class ScoreService {
       // Lỡ tiêu xu rồi mới hoàn tác thì không để ví âm.
       final coins = await _coins();
       await _setCoins(max(0, coins - log.coinsDelta));
+      // Linh vật cũng vậy: đã dùng mất thì chỉ lấy lại phần còn trong túi.
+      if (log.dropItem != null && log.dropCount > 0) {
+        await _addItem(log.dropItem!, -log.dropCount);
+      }
       await (_db.delete(_db.taskLogs)..where((l) => l.id.equals(logId))).go();
     });
   }
@@ -171,6 +206,36 @@ class ScoreService {
   Future<void> _addCoins(int delta) async {
     if (delta == 0) return;
     await _setCoins(await _coins() + delta);
+  }
+
+  Future<int> _itemCount(SpiritItem item) async =>
+      (await (_db.select(_db.inventoryItems)
+                ..where((i) => i.item.equalsValue(item)))
+              .getSingleOrNull())
+          ?.count ??
+      0;
+
+  /// Cộng (hoặc trừ, không xuống dưới 0) linh vật trong túi.
+  Future<void> _addItem(SpiritItem item, int delta) async {
+    final count = max(0, await _itemCount(item) + delta);
+    await _db.into(_db.inventoryItems).insertOnConflictUpdate(
+        InventoryItemsCompanion.insert(item: item, count: Value(count)));
+  }
+
+  JoinedSelectStatement<$TaskLogsTable, TaskLog> _dropsSinceQuery(
+          DateTime since) =>
+      _db.selectOnly(_db.taskLogs)
+        ..addColumns([_dropSum])
+        ..where(_db.taskLogs.createdAt.isBiggerOrEqualValue(since));
+
+  Future<int> _dropsToday() async {
+    final profile = await (_db.select(_db.profiles)
+          ..where((p) => p.id.equals(profileId)))
+        .getSingle();
+    final row =
+        await _dropsSinceQuery(todayStart(_clock(), profile.dayStartHour))
+            .getSingle();
+    return row.read(_dropSum) ?? 0;
   }
 
   Expression<bool> _completedSince(DateTime since) =>

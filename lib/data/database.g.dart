@@ -1133,6 +1133,27 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
         requiredDuringInsert: false,
       ).withConverter<TaskElement?>($TaskLogsTable.$converterelementn);
   @override
+  late final GeneratedColumnWithTypeConverter<SpiritItem?, String> dropItem =
+      GeneratedColumn<String>(
+        'drop_item',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<SpiritItem?>($TaskLogsTable.$converterdropItemn);
+  static const VerificationMeta _dropCountMeta = const VerificationMeta(
+    'dropCount',
+  );
+  @override
+  late final GeneratedColumn<int> dropCount = GeneratedColumn<int>(
+    'drop_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     taskId,
@@ -1144,6 +1165,8 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
     createdAt,
     title,
     element,
+    dropItem,
+    dropCount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1207,6 +1230,12 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
         title.isAcceptableOrUnknown(data['title']!, _titleMeta),
       );
     }
+    if (data.containsKey('drop_count')) {
+      context.handle(
+        _dropCountMeta,
+        dropCount.isAcceptableOrUnknown(data['drop_count']!, _dropCountMeta),
+      );
+    }
     return context;
   }
 
@@ -1260,6 +1289,16 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
           data['${effectivePrefix}element'],
         ),
       ),
+      dropItem: $TaskLogsTable.$converterdropItemn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}drop_item'],
+        ),
+      ),
+      dropCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}drop_count'],
+      )!,
     );
   }
 
@@ -1274,6 +1313,10 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
       const EnumNameConverter<TaskElement>(TaskElement.values);
   static JsonTypeConverter2<TaskElement?, String?, String?> $converterelementn =
       JsonTypeConverter2.asNullable($converterelement);
+  static JsonTypeConverter2<SpiritItem, String, String> $converterdropItem =
+      const EnumNameConverter<SpiritItem>(SpiritItem.values);
+  static JsonTypeConverter2<SpiritItem?, String?, String?> $converterdropItemn =
+      JsonTypeConverter2.asNullable($converterdropItem);
 }
 
 class TaskLog extends DataClass implements Insertable<TaskLog> {
@@ -1290,6 +1333,10 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
   /// xóa. Null với dòng cũ của task đã xóa trước bản 6.
   final String? title;
   final TaskElement? element;
+
+  /// Linh vật nhặt được ở lần chấm này, để hoàn tác lấy lại đúng món đó.
+  final SpiritItem? dropItem;
+  final int dropCount;
   const TaskLog({
     required this.id,
     required this.taskId,
@@ -1301,6 +1348,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     required this.createdAt,
     this.title,
     this.element,
+    this.dropItem,
+    required this.dropCount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1323,6 +1372,12 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
         $TaskLogsTable.$converterelementn.toSql(element),
       );
     }
+    if (!nullToAbsent || dropItem != null) {
+      map['drop_item'] = Variable<String>(
+        $TaskLogsTable.$converterdropItemn.toSql(dropItem),
+      );
+    }
+    map['drop_count'] = Variable<int>(dropCount);
     return map;
   }
 
@@ -1342,6 +1397,10 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       element: element == null && nullToAbsent
           ? const Value.absent()
           : Value(element),
+      dropItem: dropItem == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dropItem),
+      dropCount: Value(dropCount),
     );
   }
 
@@ -1365,6 +1424,10 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       element: $TaskLogsTable.$converterelementn.fromJson(
         serializer.fromJson<String?>(json['element']),
       ),
+      dropItem: $TaskLogsTable.$converterdropItemn.fromJson(
+        serializer.fromJson<String?>(json['dropItem']),
+      ),
+      dropCount: serializer.fromJson<int>(json['dropCount']),
     );
   }
   @override
@@ -1385,6 +1448,10 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       'element': serializer.toJson<String?>(
         $TaskLogsTable.$converterelementn.toJson(element),
       ),
+      'dropItem': serializer.toJson<String?>(
+        $TaskLogsTable.$converterdropItemn.toJson(dropItem),
+      ),
+      'dropCount': serializer.toJson<int>(dropCount),
     };
   }
 
@@ -1399,6 +1466,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     DateTime? createdAt,
     Value<String?> title = const Value.absent(),
     Value<TaskElement?> element = const Value.absent(),
+    Value<SpiritItem?> dropItem = const Value.absent(),
+    int? dropCount,
   }) => TaskLog(
     id: id ?? this.id,
     taskId: taskId ?? this.taskId,
@@ -1410,6 +1479,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     createdAt: createdAt ?? this.createdAt,
     title: title.present ? title.value : this.title,
     element: element.present ? element.value : this.element,
+    dropItem: dropItem.present ? dropItem.value : this.dropItem,
+    dropCount: dropCount ?? this.dropCount,
   );
   TaskLog copyWithCompanion(TaskLogsCompanion data) {
     return TaskLog(
@@ -1429,6 +1500,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       title: data.title.present ? data.title.value : this.title,
       element: data.element.present ? data.element.value : this.element,
+      dropItem: data.dropItem.present ? data.dropItem.value : this.dropItem,
+      dropCount: data.dropCount.present ? data.dropCount.value : this.dropCount,
     );
   }
 
@@ -1444,7 +1517,9 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
           ..write('critical: $critical, ')
           ..write('createdAt: $createdAt, ')
           ..write('title: $title, ')
-          ..write('element: $element')
+          ..write('element: $element, ')
+          ..write('dropItem: $dropItem, ')
+          ..write('dropCount: $dropCount')
           ..write(')'))
         .toString();
   }
@@ -1461,6 +1536,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     createdAt,
     title,
     element,
+    dropItem,
+    dropCount,
   );
   @override
   bool operator ==(Object other) =>
@@ -1475,7 +1552,9 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
           other.critical == this.critical &&
           other.createdAt == this.createdAt &&
           other.title == this.title &&
-          other.element == this.element);
+          other.element == this.element &&
+          other.dropItem == this.dropItem &&
+          other.dropCount == this.dropCount);
 }
 
 class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
@@ -1489,6 +1568,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
   final Value<DateTime> createdAt;
   final Value<String?> title;
   final Value<TaskElement?> element;
+  final Value<SpiritItem?> dropItem;
+  final Value<int> dropCount;
   const TaskLogsCompanion({
     this.id = const Value.absent(),
     this.taskId = const Value.absent(),
@@ -1500,6 +1581,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     this.createdAt = const Value.absent(),
     this.title = const Value.absent(),
     this.element = const Value.absent(),
+    this.dropItem = const Value.absent(),
+    this.dropCount = const Value.absent(),
   });
   TaskLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -1512,6 +1595,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     this.createdAt = const Value.absent(),
     this.title = const Value.absent(),
     this.element = const Value.absent(),
+    this.dropItem = const Value.absent(),
+    this.dropCount = const Value.absent(),
   }) : taskId = Value(taskId),
        kind = Value(kind);
   static Insertable<TaskLog> custom({
@@ -1525,6 +1610,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     Expression<DateTime>? createdAt,
     Expression<String>? title,
     Expression<String>? element,
+    Expression<String>? dropItem,
+    Expression<int>? dropCount,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1537,6 +1624,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
       if (createdAt != null) 'created_at': createdAt,
       if (title != null) 'title': title,
       if (element != null) 'element': element,
+      if (dropItem != null) 'drop_item': dropItem,
+      if (dropCount != null) 'drop_count': dropCount,
     });
   }
 
@@ -1551,6 +1640,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     Value<DateTime>? createdAt,
     Value<String?>? title,
     Value<TaskElement?>? element,
+    Value<SpiritItem?>? dropItem,
+    Value<int>? dropCount,
   }) {
     return TaskLogsCompanion(
       id: id ?? this.id,
@@ -1563,6 +1654,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
       createdAt: createdAt ?? this.createdAt,
       title: title ?? this.title,
       element: element ?? this.element,
+      dropItem: dropItem ?? this.dropItem,
+      dropCount: dropCount ?? this.dropCount,
     );
   }
 
@@ -1603,6 +1696,14 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
         $TaskLogsTable.$converterelementn.toSql(element.value),
       );
     }
+    if (dropItem.present) {
+      map['drop_item'] = Variable<String>(
+        $TaskLogsTable.$converterdropItemn.toSql(dropItem.value),
+      );
+    }
+    if (dropCount.present) {
+      map['drop_count'] = Variable<int>(dropCount.value);
+    }
     return map;
   }
 
@@ -1618,7 +1719,9 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
           ..write('critical: $critical, ')
           ..write('createdAt: $createdAt, ')
           ..write('title: $title, ')
-          ..write('element: $element')
+          ..write('element: $element, ')
+          ..write('dropItem: $dropItem, ')
+          ..write('dropCount: $dropCount')
           ..write(')'))
         .toString();
   }
@@ -2239,6 +2342,219 @@ class PetsCompanion extends UpdateCompanion<Pet> {
   }
 }
 
+class $InventoryItemsTable extends InventoryItems
+    with TableInfo<$InventoryItemsTable, InventoryItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InventoryItemsTable(this.attachedDatabase, [this._alias]);
+  @override
+  late final GeneratedColumnWithTypeConverter<SpiritItem, String> item =
+      GeneratedColumn<String>(
+        'item',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<SpiritItem>($InventoryItemsTable.$converteritem);
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [item, count];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'inventory_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InventoryItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {item};
+  @override
+  InventoryItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InventoryItem(
+      item: $InventoryItemsTable.$converteritem.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}item'],
+        )!,
+      ),
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+    );
+  }
+
+  @override
+  $InventoryItemsTable createAlias(String alias) {
+    return $InventoryItemsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<SpiritItem, String, String> $converteritem =
+      const EnumNameConverter<SpiritItem>(SpiritItem.values);
+}
+
+class InventoryItem extends DataClass implements Insertable<InventoryItem> {
+  final SpiritItem item;
+  final int count;
+  const InventoryItem({required this.item, required this.count});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    {
+      map['item'] = Variable<String>(
+        $InventoryItemsTable.$converteritem.toSql(item),
+      );
+    }
+    map['count'] = Variable<int>(count);
+    return map;
+  }
+
+  InventoryItemsCompanion toCompanion(bool nullToAbsent) {
+    return InventoryItemsCompanion(item: Value(item), count: Value(count));
+  }
+
+  factory InventoryItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InventoryItem(
+      item: $InventoryItemsTable.$converteritem.fromJson(
+        serializer.fromJson<String>(json['item']),
+      ),
+      count: serializer.fromJson<int>(json['count']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'item': serializer.toJson<String>(
+        $InventoryItemsTable.$converteritem.toJson(item),
+      ),
+      'count': serializer.toJson<int>(count),
+    };
+  }
+
+  InventoryItem copyWith({SpiritItem? item, int? count}) =>
+      InventoryItem(item: item ?? this.item, count: count ?? this.count);
+  InventoryItem copyWithCompanion(InventoryItemsCompanion data) {
+    return InventoryItem(
+      item: data.item.present ? data.item.value : this.item,
+      count: data.count.present ? data.count.value : this.count,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InventoryItem(')
+          ..write('item: $item, ')
+          ..write('count: $count')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(item, count);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InventoryItem &&
+          other.item == this.item &&
+          other.count == this.count);
+}
+
+class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
+  final Value<SpiritItem> item;
+  final Value<int> count;
+  final Value<int> rowid;
+  const InventoryItemsCompanion({
+    this.item = const Value.absent(),
+    this.count = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InventoryItemsCompanion.insert({
+    required SpiritItem item,
+    this.count = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : item = Value(item);
+  static Insertable<InventoryItem> custom({
+    Expression<String>? item,
+    Expression<int>? count,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (item != null) 'item': item,
+      if (count != null) 'count': count,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InventoryItemsCompanion copyWith({
+    Value<SpiritItem>? item,
+    Value<int>? count,
+    Value<int>? rowid,
+  }) {
+    return InventoryItemsCompanion(
+      item: item ?? this.item,
+      count: count ?? this.count,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (item.present) {
+      map['item'] = Variable<String>(
+        $InventoryItemsTable.$converteritem.toSql(item.value),
+      );
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InventoryItemsCompanion(')
+          ..write('item: $item, ')
+          ..write('count: $count, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2246,6 +2562,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TaskLogsTable taskLogs = $TaskLogsTable(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $PetsTable pets = $PetsTable(this);
+  late final $InventoryItemsTable inventoryItems = $InventoryItemsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2255,6 +2572,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     taskLogs,
     profiles,
     pets,
+    inventoryItems,
   ];
 }
 
@@ -2722,6 +3040,8 @@ typedef $$TaskLogsTableCreateCompanionBuilder = TaskLogsCompanion Function({
   Value<DateTime> createdAt,
   Value<String?> title,
   Value<TaskElement?> element,
+  Value<SpiritItem?> dropItem,
+  Value<int> dropCount,
 });
 typedef $$TaskLogsTableUpdateCompanionBuilder = TaskLogsCompanion Function({
   Value<int> id,
@@ -2734,6 +3054,8 @@ typedef $$TaskLogsTableUpdateCompanionBuilder = TaskLogsCompanion Function({
   Value<DateTime> createdAt,
   Value<String?> title,
   Value<TaskElement?> element,
+  Value<SpiritItem?> dropItem,
+  Value<int> dropCount,
 });
 
 class $$TaskLogsTableFilterComposer
@@ -2796,6 +3118,17 @@ class $$TaskLogsTableFilterComposer
     column: $table.element,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
+
+  ColumnWithTypeConverterFilters<SpiritItem?, SpiritItem, String>
+  get dropItem => $composableBuilder(
+    column: $table.dropItem,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get dropCount => $composableBuilder(
+    column: $table.dropCount,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$TaskLogsTableOrderingComposer
@@ -2856,6 +3189,16 @@ class $$TaskLogsTableOrderingComposer
     column: $table.element,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get dropItem => $composableBuilder(
+    column: $table.dropItem,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dropCount => $composableBuilder(
+    column: $table.dropCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TaskLogsTableAnnotationComposer
@@ -2902,6 +3245,12 @@ class $$TaskLogsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<TaskElement?, String> get element =>
       $composableBuilder(column: $table.element, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<SpiritItem?, String> get dropItem =>
+      $composableBuilder(column: $table.dropItem, builder: (column) => column);
+
+  GeneratedColumn<int> get dropCount =>
+      $composableBuilder(column: $table.dropCount, builder: (column) => column);
 }
 
 class $$TaskLogsTableTableManager
@@ -2942,6 +3291,8 @@ class $$TaskLogsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> title = const Value.absent(),
                 Value<TaskElement?> element = const Value.absent(),
+                Value<SpiritItem?> dropItem = const Value.absent(),
+                Value<int> dropCount = const Value.absent(),
               }) => TaskLogsCompanion(
                 id: id,
                 taskId: taskId,
@@ -2953,6 +3304,8 @@ class $$TaskLogsTableTableManager
                 createdAt: createdAt,
                 title: title,
                 element: element,
+                dropItem: dropItem,
+                dropCount: dropCount,
               ),
           createCompanionCallback:
               ({
@@ -2966,6 +3319,8 @@ class $$TaskLogsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> title = const Value.absent(),
                 Value<TaskElement?> element = const Value.absent(),
+                Value<SpiritItem?> dropItem = const Value.absent(),
+                Value<int> dropCount = const Value.absent(),
               }) => TaskLogsCompanion.insert(
                 id: id,
                 taskId: taskId,
@@ -2977,6 +3332,8 @@ class $$TaskLogsTableTableManager
                 createdAt: createdAt,
                 title: title,
                 element: element,
+                dropItem: dropItem,
+                dropCount: dropCount,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3349,6 +3706,156 @@ typedef $$PetsTableProcessedTableManager =
       Pet,
       PrefetchHooks Function()
     >;
+typedef $$InventoryItemsTableCreateCompanionBuilder =
+    InventoryItemsCompanion Function({
+      required SpiritItem item,
+      Value<int> count,
+      Value<int> rowid,
+    });
+typedef $$InventoryItemsTableUpdateCompanionBuilder =
+    InventoryItemsCompanion Function({
+      Value<SpiritItem> item,
+      Value<int> count,
+      Value<int> rowid,
+    });
+
+class $$InventoryItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $InventoryItemsTable> {
+  $$InventoryItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnWithTypeConverterFilters<SpiritItem, SpiritItem, String> get item =>
+      $composableBuilder(
+        column: $table.item,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$InventoryItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InventoryItemsTable> {
+  $$InventoryItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get item => $composableBuilder(
+    column: $table.item,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InventoryItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InventoryItemsTable> {
+  $$InventoryItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumnWithTypeConverter<SpiritItem, String> get item =>
+      $composableBuilder(column: $table.item, builder: (column) => column);
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+}
+
+class $$InventoryItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InventoryItemsTable,
+          InventoryItem,
+          $$InventoryItemsTableFilterComposer,
+          $$InventoryItemsTableOrderingComposer,
+          $$InventoryItemsTableAnnotationComposer,
+          $$InventoryItemsTableCreateCompanionBuilder,
+          $$InventoryItemsTableUpdateCompanionBuilder,
+          (
+            InventoryItem,
+            BaseReferences<_$AppDatabase, $InventoryItemsTable, InventoryItem>,
+          ),
+          InventoryItem,
+          PrefetchHooks Function()
+        > {
+  $$InventoryItemsTableTableManager(
+    _$AppDatabase db,
+    $InventoryItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InventoryItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InventoryItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InventoryItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<SpiritItem> item = const Value.absent(),
+            Value<int> count = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => InventoryItemsCompanion(item: item, count: count, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required SpiritItem item,
+                Value<int> count = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InventoryItemsCompanion.insert(
+                item: item,
+                count: count,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$InventoryItemsTable, InventoryItem>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $InventoryItemsTable,
+                    InventoryItem
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InventoryItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InventoryItemsTable,
+      InventoryItem,
+      $$InventoryItemsTableFilterComposer,
+      $$InventoryItemsTableOrderingComposer,
+      $$InventoryItemsTableAnnotationComposer,
+      $$InventoryItemsTableCreateCompanionBuilder,
+      $$InventoryItemsTableUpdateCompanionBuilder,
+      (
+        InventoryItem,
+        BaseReferences<_$AppDatabase, $InventoryItemsTable, InventoryItem>,
+      ),
+      InventoryItem,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3360,4 +3867,6 @@ class $AppDatabaseManager {
   $$ProfilesTableTableManager get profiles =>
       $$ProfilesTableTableManager(_db, _db.profiles);
   $$PetsTableTableManager get pets => $$PetsTableTableManager(_db, _db.pets);
+  $$InventoryItemsTableTableManager get inventoryItems =>
+      $$InventoryItemsTableTableManager(_db, _db.inventoryItems);
 }

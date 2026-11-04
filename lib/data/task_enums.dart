@@ -31,6 +31,25 @@ enum TaskElement {
   final String hint;
 }
 
+/// Linh vật rơi ra khi làm việc tốt, theo hệ của task. Bản "ngàn năm" hiếm
+/// hơn. Lưu theo tên trong database: đổi tên giá trị cần migration.
+enum SpiritItem {
+  fireCommon(TaskElement.fire, false, 'Hỏa Linh Quả'),
+  fireRare(TaskElement.fire, true, 'Hỏa Linh Quả ngàn năm'),
+  waterCommon(TaskElement.water, false, 'Thủy Tinh Lộ'),
+  waterRare(TaskElement.water, true, 'Thủy Tinh Lộ ngàn năm'),
+  woodCommon(TaskElement.wood, false, 'Mộc Linh Chi'),
+  woodRare(TaskElement.wood, true, 'Mộc Linh Chi ngàn năm');
+
+  const SpiritItem(this.element, this.rare, this.label);
+  final TaskElement element;
+  final bool rare;
+  final String label;
+
+  static SpiritItem of(TaskElement element, {required bool rare}) =>
+      values.firstWhere((i) => i.element == element && i.rare == rare);
+}
+
 /// Loại sự kiện trong nhật ký chấm điểm.
 enum LogKind {
   /// Làm xong thói quen tốt, daily hoặc việc cần làm.

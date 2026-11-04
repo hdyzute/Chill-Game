@@ -83,7 +83,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 
 **Giai đoạn 2: Linh thú**
 - [x] Màn hình khế ước (đặt tên, nhận trứng), trứng nở từ việc tốt đầu tiên, màn hình nhà của pet với hình tạm (bước 2.1). Chưa có bước chọn trứng vì MVP chỉ có 1 loài
-- [ ] Xu, linh vật, bạo kích, rơi đồ có giới hạn mỗi ngày, phần thưởng tự đặt
+- [x] Linh vật rơi khi làm việc tốt (theo hệ, Dễ 50% / Vừa 75% / Khó 100%, 10% ra bản "ngàn năm"), bạo kích rơi 2 món, tối đa 5 món mỗi ngày, túi linh vật trong tab Linh thú; hoàn tác lấy lại đúng món (bước 2.2). Xu, bạo kích và phần thưởng tự đặt đã có từ bước 1.2
 - [ ] Hấp thụ linh vật → EXP và điểm hệ; tâm trạng; tiến hóa theo nhánh
 - ✅ Kiểm tra: 3–5 người bạn dùng thử 2 tuần, xem họ có mở app đều không
 

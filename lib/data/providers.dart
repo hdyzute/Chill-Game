@@ -146,6 +146,20 @@ final petStatusProvider = Provider<PetStatus?>((ref) {
   );
 });
 
+/// Túi linh vật: số lượng từng loại đang có.
+final inventoryProvider = StreamProvider<Map<SpiritItem, int>>(
+    (ref) => ref.watch(scoreServiceProvider).watchInventory());
+
+/// Số linh vật đã nhặt hôm nay, để hiện "x/5".
+final todayDropsProvider = StreamProvider<int>((ref) {
+  final today = ref.watch(todayProvider);
+  final hour = ref.watch(dayStartHourProvider);
+  if (today == null || hour == null) return const Stream.empty();
+  return ref
+      .watch(scoreServiceProvider)
+      .watchDropsSince(dayStartInstant(today, hour));
+});
+
 /// Số lần hoàn thành hôm nay của từng task (taskId → số lần).
 final todayCountsProvider = StreamProvider<Map<int, int>>((ref) {
   final today = ref.watch(todayProvider);

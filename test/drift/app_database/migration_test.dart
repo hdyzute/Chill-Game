@@ -14,6 +14,7 @@ import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
 import 'generated/schema_v7.dart' as v7;
+import 'generated/schema_v8.dart' as v8;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -351,6 +352,48 @@ void main() {
             15);
         expect((await newDb.select(newDb.profiles).getSingle()).coins, 15);
         expect(await newDb.select(newDb.pets).get(), isEmpty);
+      },
+    );
+  });
+
+  // Bản 8 thêm linh vật: nhật ký cũ không có món nào, túi đồ trống, linh thú
+  // và xu giữ nguyên.
+  test('nâng cấp v7 lên v8: nhật ký cũ không rơi đồ, túi trống', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 7,
+      newVersion: 8,
+      createOld: v7.DatabaseAtV7.new,
+      createNew: v8.DatabaseAtV8.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.taskLogs, const [
+          v7.TaskLogsData(
+            id: 1,
+            taskId: 1,
+            kind: 'complete',
+            valueDelta: 1,
+            coinsDelta: 15,
+            streakDelta: 1,
+            critical: 0,
+            createdAt: 1793700000,
+            title: 'Nhảy dây',
+            element: 'fire',
+          ),
+        ]);
+        batch.insert(oldDb.profiles,
+            const v7.ProfilesData(
+                id: profileId, coins: 60, dayStartHour: 0, resting: 0));
+        batch.insert(oldDb.pets,
+            const v7.PetsData(id: 1, name: 'Abcdef', createdAt: 1793700000));
+      },
+      validateItems: (newDb) async {
+        final log = await newDb.select(newDb.taskLogs).getSingle();
+        expect(log.coinsDelta, 15);
+        expect(log.dropItem, isNull);
+        expect(log.dropCount, 0);
+        expect(await newDb.select(newDb.inventoryItems).get(), isEmpty);
+        expect((await newDb.select(newDb.pets).getSingle()).name, 'Abcdef');
+        expect((await newDb.select(newDb.profiles).getSingle()).coins, 60);
       },
     );
   });

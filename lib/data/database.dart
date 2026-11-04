@@ -64,6 +64,10 @@ class TaskLogs extends Table {
   /// xóa. Null với dòng cũ của task đã xóa trước bản 6.
   TextColumn get title => text().nullable()();
   TextColumn get element => textEnum<TaskElement>().nullable()();
+
+  /// Linh vật nhặt được ở lần chấm này, để hoàn tác lấy lại đúng món đó.
+  TextColumn get dropItem => textEnum<SpiritItem>().nullable()();
+  IntColumn get dropCount => integer().withDefault(const Constant(0))();
 }
 
 /// Một dòng duy nhất (id = [profileId]) giữ ví và cài đặt của người dùng.
@@ -95,13 +99,23 @@ class Pets extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-@DriftDatabase(tables: [Tasks, TaskLogs, Profiles, Pets])
+/// Túi linh vật: số lượng từng loại. Chỉ ScoreService ghi vào (rơi đồ và
+/// hoàn tác), giống ví xu.
+class InventoryItems extends Table {
+  TextColumn get item => textEnum<SpiritItem>()();
+  IntColumn get count => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {item};
+}
+
+@DriftDatabase(tables: [Tasks, TaskLogs, Profiles, Pets, InventoryItems])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -138,6 +152,11 @@ class AppDatabase extends _$AppDatabase {
           },
           from6To7: (m, schema) async {
             await m.createTable(schema.pets);
+          },
+          from7To8: (m, schema) async {
+            await m.addColumn(schema.taskLogs, schema.taskLogs.dropItem);
+            await m.addColumn(schema.taskLogs, schema.taskLogs.dropCount);
+            await m.createTable(schema.inventoryItems);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

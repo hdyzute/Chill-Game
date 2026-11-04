@@ -30,3 +30,21 @@ class FakeScheduler implements NotificationScheduler {
     replaceCount++;
   }
 }
+
+/// Trả lần lượt các số cho sẵn (lặp lại từ đầu khi hết). Thứ tự trong
+/// ScoreService.score: bạo kích, rơi đồ, món quý.
+class SequenceRandom implements Random {
+  SequenceRandom(this.values);
+
+  final List<double> values;
+  var _i = 0;
+
+  @override
+  double nextDouble() => values[_i++ % values.length];
+
+  @override
+  bool nextBool() => throw UnimplementedError();
+
+  @override
+  int nextInt(int max) => throw UnimplementedError();
+}

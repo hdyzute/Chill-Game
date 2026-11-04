@@ -40,13 +40,14 @@ void main() {
 
   Future<void> addTask(String title, TaskType type,
           {int cost = 0,
+          Difficulty difficulty = Difficulty.easy,
           int dailyTarget = 1,
           int repeatDays = everyDayMask,
           int? reminderMinutes}) =>
       db.into(db.tasks).insert(TasksCompanion.insert(
             title: title,
             type: type,
-            difficulty: Difficulty.easy,
+            difficulty: difficulty,
             repeatDays: Value(repeatDays),
             reminderMinutes: Value(reminderMinutes),
             element: Value(type == TaskType.reward ? null : TaskElement.fire),
@@ -418,6 +419,34 @@ void main() {
 
     expect(find.text('Bánh Bao'), findsOneWidget);
     expect((await db.select(db.pets).getSingle()).name, 'Bánh Bao');
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('làm việc khó rơi linh vật: báo trong thông báo và vào túi',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+    await addTask('Chạy bộ', TaskType.daily, difficulty: Difficulty.hard);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi', createdAt: DateTime(2026, 11, 1, 20)));
+    await pumpApp(tester);
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('nhặt được Hỏa Linh Quả'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.pets_outlined));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+        find.byKey(const Key('drops-today')), 200,
+        scrollable: find.byType(Scrollable).last);
+    expect(tester.widget<Text>(find.byKey(const Key('drops-today'))).data,
+        'Hôm nay 1/5');
+    expect(find.text('Hỏa Linh Quả'), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('item-fireCommon'))).data,
+        '×1');
 
     await tearDownApp(tester);
   });

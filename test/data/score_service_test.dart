@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:linh_thu_ky_luat/data/profile_repository.dart';
 import 'package:linh_thu_ky_luat/data/score_service.dart';
+import 'package:linh_thu_ky_luat/domain/drops.dart';
 
 import '../helpers.dart';
 
@@ -185,5 +186,69 @@ void main() {
 
     await service.undo(log.id);
     expect(await coins(), 0);
+  });
+
+  group('rơi linh vật', () {
+    Future<Map<SpiritItem, int>> bag() => service.watchInventory().first;
+    Future<int> droppedToday() => service
+        .watchDropsSince(DateTime(now.year, now.month, now.day))
+        .first;
+
+    test('việc tốt rơi linh vật theo hệ, hoàn tác lấy lại đúng món', () async {
+      // Không bạo kích, rơi đồ, không quý.
+      service = ScoreService(db,
+          random: SequenceRandom([0.5, 0.1, 0.9]), clock: () => now);
+      final id = await addTask(TaskType.daily);
+      final log = await service.score(id);
+
+      expect(log.dropItem, SpiritItem.fireCommon);
+      expect(log.dropCount, 1);
+      expect(await bag(), {SpiritItem.fireCommon: 1});
+      expect(await droppedToday(), 1);
+
+      await service.undo(log.id);
+      expect(await bag(), isEmpty);
+      expect(await droppedToday(), 0);
+    });
+
+    test('bạo kích rơi 2 món quý', () async {
+      service = ScoreService(db,
+          random: SequenceRandom([0.01, 0.1, 0.05]), clock: () => now);
+      final log = await service.score(await addTask(TaskType.todo));
+
+      expect(log.critical, isTrue);
+      expect(log.dropItem, SpiritItem.fireRare);
+      expect(log.dropCount, 2);
+      expect(await bag(), {SpiritItem.fireRare: 2});
+    });
+
+    test('mỗi ngày tối đa 5 món, sang ngày mới nhặt tiếp', () async {
+      service = ScoreService(db,
+          random: SequenceRandom([0.5, 0.1, 0.9]), clock: () => now);
+      final id = await addTask(TaskType.habit, dailyTarget: 7);
+      final logs = [for (var i = 0; i < 7; i++) await service.score(id)];
+
+      expect(logs.map((l) => l.dropCount), [1, 1, 1, 1, 1, 0, 0]);
+      expect(await bag(), {SpiritItem.fireCommon: Drops.dailyCap});
+
+      now = now.add(const Duration(days: 1));
+      expect((await service.score(id)).dropCount, 1);
+    });
+
+    test('việc xấu không rơi gì', () async {
+      service = ScoreService(db,
+          random: SequenceRandom([0.5, 0.1, 0.9]), clock: () => now);
+      final id = await db.into(db.tasks).insert(TasksCompanion.insert(
+            title: 'Thức khuya',
+            type: TaskType.habit,
+            difficulty: Difficulty.hard,
+            element: const Value(TaskElement.wood),
+            habitUp: const Value(false),
+            habitDown: const Value(true),
+          ));
+      final log = await service.score(id, up: false);
+      expect(log.dropItem, isNull);
+      expect(await bag(), isEmpty);
+    });
   });
 }

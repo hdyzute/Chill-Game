@@ -19,6 +19,7 @@ void main() {
         createdAt: at,
         title: 'Chạy bộ',
         element: element,
+        dropCount: 0,
       );
 
   test('gom theo ngày logic: 2 giờ sáng thuộc hôm trước khi ngày bắt đầu 4:00',

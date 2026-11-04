@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../domain/drops.dart';
 import '../../domain/history.dart';
 import '../tasks/task_style.dart';
 
@@ -373,6 +374,8 @@ class _LogTile extends StatelessWidget {
       if (log.kind == LogKind.bad) 'thói quen xấu',
       if (log.kind == LogKind.purchase) 'đổi phần thưởng',
       if (log.critical) 'Linh khí bạo phát!',
+      if (log.dropItem != null)
+        'nhặt được ${dropLabel(log.dropItem!, log.dropCount)}',
     ];
     final coins = log.coinsDelta;
 

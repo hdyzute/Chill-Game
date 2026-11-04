@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../domain/drops.dart';
 import '../../domain/history.dart';
 import '../../domain/pet.dart';
 import 'pet_art.dart';
@@ -162,9 +163,11 @@ class _PetHome extends ConsumerWidget {
               title: Text('Nở vào ${dayLabel(status.hatchedOn!)}'),
             ),
           ),
+        const SizedBox(height: 8),
+        const _BagCard(),
         const SizedBox(height: 24),
         Text(
-          'Sắp có: cho ăn linh vật, lên cấp và tiến hóa theo hệ.',
+          'Sắp có: cho linh thú hấp thụ linh vật để lên cấp và tiến hóa theo hệ.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -181,6 +184,65 @@ class _PetHome extends ConsumerWidget {
     if (name != null) {
       await ref.read(petRepositoryProvider).rename(pet.id, name);
     }
+  }
+}
+
+/// Túi linh vật: các món đã nhặt, và số món nhặt hôm nay trên giới hạn.
+class _BagCard extends ConsumerWidget {
+  const _BagCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final items = ref.watch(inventoryProvider).value ?? const {};
+    final today = ref.watch(todayDropsProvider).value ?? 0;
+    final muted = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Túi linh vật',
+                      style: theme.textTheme.titleMedium),
+                ),
+                Text('Hôm nay $today/${Drops.dailyCap}',
+                    key: const Key('drops-today'), style: muted),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (items.isEmpty)
+              const Text('Túi còn trống. Làm việc tốt để nhặt linh vật nhé.')
+            else
+              for (final item in SpiritItem.values)
+                if (items[item] case final count?)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        SpiritItemIcon(item),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(item.label)),
+                        Text('×$count',
+                            key: Key('item-${item.name}'),
+                            style: theme.textTheme.titleSmall),
+                      ],
+                    ),
+                  ),
+            const SizedBox(height: 8),
+            Text(
+              'Việc tốt có thể rơi linh vật theo hệ của nó, việc càng khó càng '
+              'dễ rơi. Mỗi ngày nhặt tối đa ${Drops.dailyCap} món.',
+              style: muted,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
