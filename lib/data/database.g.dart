@@ -1114,6 +1114,24 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TaskElement?, String> element =
+      GeneratedColumn<String>(
+        'element',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<TaskElement?>($TaskLogsTable.$converterelementn);
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1124,6 +1142,8 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
     streakDelta,
     critical,
     createdAt,
+    title,
+    element,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1181,6 +1201,12 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
     return context;
   }
 
@@ -1224,6 +1250,16 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      element: $TaskLogsTable.$converterelementn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}element'],
+        ),
+      ),
     );
   }
 
@@ -1234,6 +1270,10 @@ class $TaskLogsTable extends TaskLogs with TableInfo<$TaskLogsTable, TaskLog> {
 
   static JsonTypeConverter2<LogKind, String, String> $converterkind =
       const EnumNameConverter<LogKind>(LogKind.values);
+  static JsonTypeConverter2<TaskElement, String, String> $converterelement =
+      const EnumNameConverter<TaskElement>(TaskElement.values);
+  static JsonTypeConverter2<TaskElement?, String?, String?> $converterelementn =
+      JsonTypeConverter2.asNullable($converterelement);
 }
 
 class TaskLog extends DataClass implements Insertable<TaskLog> {
@@ -1245,6 +1285,11 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
   final int streakDelta;
   final bool critical;
   final DateTime createdAt;
+
+  /// Tên và hệ của task lúc chấm, để lịch sử không đổi khi task bị sửa hay
+  /// xóa. Null với dòng cũ của task đã xóa trước bản 6.
+  final String? title;
+  final TaskElement? element;
   const TaskLog({
     required this.id,
     required this.taskId,
@@ -1254,6 +1299,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     required this.streakDelta,
     required this.critical,
     required this.createdAt,
+    this.title,
+    this.element,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1268,6 +1315,14 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     map['streak_delta'] = Variable<int>(streakDelta);
     map['critical'] = Variable<bool>(critical);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    if (!nullToAbsent || element != null) {
+      map['element'] = Variable<String>(
+        $TaskLogsTable.$converterelementn.toSql(element),
+      );
+    }
     return map;
   }
 
@@ -1281,6 +1336,12 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       streakDelta: Value(streakDelta),
       critical: Value(critical),
       createdAt: Value(createdAt),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      element: element == null && nullToAbsent
+          ? const Value.absent()
+          : Value(element),
     );
   }
 
@@ -1300,6 +1361,10 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       streakDelta: serializer.fromJson<int>(json['streakDelta']),
       critical: serializer.fromJson<bool>(json['critical']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      title: serializer.fromJson<String?>(json['title']),
+      element: $TaskLogsTable.$converterelementn.fromJson(
+        serializer.fromJson<String?>(json['element']),
+      ),
     );
   }
   @override
@@ -1316,6 +1381,10 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
       'streakDelta': serializer.toJson<int>(streakDelta),
       'critical': serializer.toJson<bool>(critical),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'title': serializer.toJson<String?>(title),
+      'element': serializer.toJson<String?>(
+        $TaskLogsTable.$converterelementn.toJson(element),
+      ),
     };
   }
 
@@ -1328,6 +1397,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     int? streakDelta,
     bool? critical,
     DateTime? createdAt,
+    Value<String?> title = const Value.absent(),
+    Value<TaskElement?> element = const Value.absent(),
   }) => TaskLog(
     id: id ?? this.id,
     taskId: taskId ?? this.taskId,
@@ -1337,6 +1408,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     streakDelta: streakDelta ?? this.streakDelta,
     critical: critical ?? this.critical,
     createdAt: createdAt ?? this.createdAt,
+    title: title.present ? title.value : this.title,
+    element: element.present ? element.value : this.element,
   );
   TaskLog copyWithCompanion(TaskLogsCompanion data) {
     return TaskLog(
@@ -1354,6 +1427,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
           : this.streakDelta,
       critical: data.critical.present ? data.critical.value : this.critical,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      title: data.title.present ? data.title.value : this.title,
+      element: data.element.present ? data.element.value : this.element,
     );
   }
 
@@ -1367,7 +1442,9 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
           ..write('coinsDelta: $coinsDelta, ')
           ..write('streakDelta: $streakDelta, ')
           ..write('critical: $critical, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('title: $title, ')
+          ..write('element: $element')
           ..write(')'))
         .toString();
   }
@@ -1382,6 +1459,8 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
     streakDelta,
     critical,
     createdAt,
+    title,
+    element,
   );
   @override
   bool operator ==(Object other) =>
@@ -1394,7 +1473,9 @@ class TaskLog extends DataClass implements Insertable<TaskLog> {
           other.coinsDelta == this.coinsDelta &&
           other.streakDelta == this.streakDelta &&
           other.critical == this.critical &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.title == this.title &&
+          other.element == this.element);
 }
 
 class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
@@ -1406,6 +1487,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
   final Value<int> streakDelta;
   final Value<bool> critical;
   final Value<DateTime> createdAt;
+  final Value<String?> title;
+  final Value<TaskElement?> element;
   const TaskLogsCompanion({
     this.id = const Value.absent(),
     this.taskId = const Value.absent(),
@@ -1415,6 +1498,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     this.streakDelta = const Value.absent(),
     this.critical = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.title = const Value.absent(),
+    this.element = const Value.absent(),
   });
   TaskLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -1425,6 +1510,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     this.streakDelta = const Value.absent(),
     this.critical = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.title = const Value.absent(),
+    this.element = const Value.absent(),
   }) : taskId = Value(taskId),
        kind = Value(kind);
   static Insertable<TaskLog> custom({
@@ -1436,6 +1523,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     Expression<int>? streakDelta,
     Expression<bool>? critical,
     Expression<DateTime>? createdAt,
+    Expression<String>? title,
+    Expression<String>? element,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1446,6 +1535,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
       if (streakDelta != null) 'streak_delta': streakDelta,
       if (critical != null) 'critical': critical,
       if (createdAt != null) 'created_at': createdAt,
+      if (title != null) 'title': title,
+      if (element != null) 'element': element,
     });
   }
 
@@ -1458,6 +1549,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     Value<int>? streakDelta,
     Value<bool>? critical,
     Value<DateTime>? createdAt,
+    Value<String?>? title,
+    Value<TaskElement?>? element,
   }) {
     return TaskLogsCompanion(
       id: id ?? this.id,
@@ -1468,6 +1561,8 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
       streakDelta: streakDelta ?? this.streakDelta,
       critical: critical ?? this.critical,
       createdAt: createdAt ?? this.createdAt,
+      title: title ?? this.title,
+      element: element ?? this.element,
     );
   }
 
@@ -1500,6 +1595,14 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (element.present) {
+      map['element'] = Variable<String>(
+        $TaskLogsTable.$converterelementn.toSql(element.value),
+      );
+    }
     return map;
   }
 
@@ -1513,7 +1616,9 @@ class TaskLogsCompanion extends UpdateCompanion<TaskLog> {
           ..write('coinsDelta: $coinsDelta, ')
           ..write('streakDelta: $streakDelta, ')
           ..write('critical: $critical, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('title: $title, ')
+          ..write('element: $element')
           ..write(')'))
         .toString();
   }
@@ -2364,6 +2469,8 @@ typedef $$TaskLogsTableCreateCompanionBuilder = TaskLogsCompanion Function({
   Value<int> streakDelta,
   Value<bool> critical,
   Value<DateTime> createdAt,
+  Value<String?> title,
+  Value<TaskElement?> element,
 });
 typedef $$TaskLogsTableUpdateCompanionBuilder = TaskLogsCompanion Function({
   Value<int> id,
@@ -2374,6 +2481,8 @@ typedef $$TaskLogsTableUpdateCompanionBuilder = TaskLogsCompanion Function({
   Value<int> streakDelta,
   Value<bool> critical,
   Value<DateTime> createdAt,
+  Value<String?> title,
+  Value<TaskElement?> element,
 });
 
 class $$TaskLogsTableFilterComposer
@@ -2425,6 +2534,17 @@ class $$TaskLogsTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TaskElement?, TaskElement, String>
+  get element => $composableBuilder(
+    column: $table.element,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
 }
 
 class $$TaskLogsTableOrderingComposer
@@ -2475,6 +2595,16 @@ class $$TaskLogsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get element => $composableBuilder(
+    column: $table.element,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TaskLogsTableAnnotationComposer
@@ -2515,6 +2645,12 @@ class $$TaskLogsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TaskElement?, String> get element =>
+      $composableBuilder(column: $table.element, builder: (column) => column);
 }
 
 class $$TaskLogsTableTableManager
@@ -2553,6 +2689,8 @@ class $$TaskLogsTableTableManager
                 Value<int> streakDelta = const Value.absent(),
                 Value<bool> critical = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<TaskElement?> element = const Value.absent(),
               }) => TaskLogsCompanion(
                 id: id,
                 taskId: taskId,
@@ -2562,6 +2700,8 @@ class $$TaskLogsTableTableManager
                 streakDelta: streakDelta,
                 critical: critical,
                 createdAt: createdAt,
+                title: title,
+                element: element,
               ),
           createCompanionCallback:
               ({
@@ -2573,6 +2713,8 @@ class $$TaskLogsTableTableManager
                 Value<int> streakDelta = const Value.absent(),
                 Value<bool> critical = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<TaskElement?> element = const Value.absent(),
               }) => TaskLogsCompanion.insert(
                 id: id,
                 taskId: taskId,
@@ -2582,6 +2724,8 @@ class $$TaskLogsTableTableManager
                 streakDelta: streakDelta,
                 critical: critical,
                 createdAt: createdAt,
+                title: title,
+                element: element,
               ),
           withReferenceMapper: (p0) => p0
               .map(

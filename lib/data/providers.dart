@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/day.dart';
+import '../domain/history.dart';
 import '../domain/reminders.dart';
 import 'database.dart';
+import 'history_repository.dart';
 import 'notification_scheduler.dart';
 import 'profile_repository.dart';
 import 'rollover_service.dart';
@@ -81,6 +83,32 @@ final reminderPlansProvider = Provider<List<ReminderPlan>?>((ref) {
     now: ref.watch(clockProvider)(),
     dayStartHour: hour,
   );
+});
+
+final historyRepositoryProvider =
+    Provider((ref) => HistoryRepository(ref.watch(databaseProvider)));
+
+/// Nhật ký của một tháng, chia theo ngày logic. Khóa là ngày 1 của tháng.
+final monthLogsProvider =
+    StreamProvider.autoDispose.family<List<TaskLog>, DateTime>((ref, month) {
+  final hour = ref.watch(dayStartHourProvider);
+  if (hour == null) return const Stream.empty();
+  return ref.watch(historyRepositoryProvider).watchBetween(
+        dayStartInstant(month, hour),
+        dayStartInstant(DateTime(month.year, month.month + 1), hour),
+      );
+});
+
+final _completionTimesProvider = StreamProvider<List<DateTime>>(
+    (ref) => ref.watch(historyRepositoryProvider).watchCompletionTimes());
+
+/// Số ngày liên tiếp có làm ít nhất một việc tốt. Null khi chưa tải xong.
+final activeStreakProvider = Provider<int?>((ref) {
+  final times = ref.watch(_completionTimesProvider).value;
+  final hour = ref.watch(dayStartHourProvider);
+  final today = ref.watch(todayProvider);
+  if (times == null || hour == null || today == null) return null;
+  return activeStreak({for (final t in times) logicalDate(t, hour)}, today);
 });
 
 /// Số lần hoàn thành hôm nay của từng task (taskId → số lần).

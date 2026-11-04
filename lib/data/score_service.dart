@@ -78,7 +78,7 @@ class ScoreService {
         ),
       );
       await _addCoins(outcome.coinsDelta);
-      return _insertLog(TaskLogsCompanion.insert(
+      return _insertLog(task, TaskLogsCompanion.insert(
         taskId: taskId,
         kind: up ? LogKind.complete : LogKind.bad,
         valueDelta: Value(outcome.valueDelta),
@@ -99,7 +99,7 @@ class ScoreService {
       if (await _coins() < task.cost) return null;
 
       await _addCoins(-task.cost);
-      return _insertLog(TaskLogsCompanion.insert(
+      return _insertLog(task, TaskLogsCompanion.insert(
         taskId: taskId,
         kind: LogKind.purchase,
         coinsDelta: Value(-task.cost),
@@ -189,8 +189,12 @@ class ScoreService {
     return (await query.getSingle()).read(count)!;
   }
 
-  // Ghi giờ theo _clock (không dùng giờ của SQLite) để "hôm nay" khớp nhau.
-  Future<TaskLog> _insertLog(TaskLogsCompanion log) => _db
-      .into(_db.taskLogs)
-      .insertReturning(log.copyWith(createdAt: Value(_clock())));
+  // Ghi giờ theo _clock (không dùng giờ của SQLite) để "hôm nay" khớp nhau,
+  // và chụp lại tên, hệ của task cho lịch sử.
+  Future<TaskLog> _insertLog(Task task, TaskLogsCompanion log) =>
+      _db.into(_db.taskLogs).insertReturning(log.copyWith(
+            createdAt: Value(_clock()),
+            title: Value(task.title),
+            element: Value(task.element),
+          ));
 }

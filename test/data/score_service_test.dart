@@ -161,6 +161,23 @@ void main() {
     expect(await coins(), 0);
   });
 
+  test('nhật ký giữ tên và hệ lúc chấm, dù task bị đổi tên hay xóa sau đó',
+      () async {
+    final id = await addTask(TaskType.habit);
+    final first = await service.score(id);
+    await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+        const TasksCompanion(
+            title: Value('Uống nước'), element: Value(TaskElement.wood)));
+    now = now.add(const Duration(days: 1));
+    final second = await service.score(id);
+    await (db.delete(db.tasks)..where((t) => t.id.equals(id))).go();
+
+    final logs = await db.select(db.taskLogs).get();
+    expect(logs.map((l) => l.id), [first.id, second.id]);
+    expect(logs.map((l) => l.title), ['Thói quen', 'Uống nước']);
+    expect(logs.map((l) => l.element), [TaskElement.fire, TaskElement.wood]);
+  });
+
   test('xóa task rồi hoàn tác vẫn trả lại xu', () async {
     final id = await addTask(TaskType.todo);
     final log = await service.score(id);

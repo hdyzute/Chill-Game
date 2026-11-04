@@ -78,7 +78,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Thói quen tốt có "số lần mỗi ngày" (mặc định 1) để không bấm liên tục cày xu
 - [x] Giờ bắt đầu ngày, xử lý sang ngày mới, đứt chuỗi khi bỏ lỡ, chế độ bế quan, cất việc cần làm đã xong (bước 1.3)
 - [x] Thông báo nhắc giờ cho daily và thói quen, tự bỏ qua khi đã làm xong (bước 1.4)
-- [ ] Lịch sử và lịch tháng
+- [x] Lịch sử: lịch tháng tô đậm theo số việc tốt, chi tiết từng ngày, chuỗi ngày liên tiếp, thống kê tháng theo hệ (bước 1.5)
 - ✅ Kiểm tra: bạn tự dùng thật 1 tuần
 
 **Giai đoạn 2: Linh thú**

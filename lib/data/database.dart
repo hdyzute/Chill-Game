@@ -59,6 +59,11 @@ class TaskLogs extends Table {
   IntColumn get streakDelta => integer().withDefault(const Constant(0))();
   BoolColumn get critical => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// Tên và hệ của task lúc chấm, để lịch sử không đổi khi task bị sửa hay
+  /// xóa. Null với dòng cũ của task đã xóa trước bản 6.
+  TextColumn get title => text().nullable()();
+  TextColumn get element => textEnum<TaskElement>().nullable()();
 }
 
 /// Một dòng duy nhất (id = [profileId]) giữ ví và cài đặt của người dùng.
@@ -87,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -111,6 +116,16 @@ class AppDatabase extends _$AppDatabase {
           },
           from4To5: (m, schema) async {
             await m.addColumn(schema.tasks, schema.tasks.reminderMinutes);
+          },
+          from5To6: (m, schema) async {
+            await m.addColumn(schema.taskLogs, schema.taskLogs.title);
+            await m.addColumn(schema.taskLogs, schema.taskLogs.element);
+            // Điền tên và hệ cho nhật ký cũ từ task còn tồn tại.
+            await customStatement('''
+              UPDATE task_logs SET
+                title = (SELECT title FROM tasks WHERE tasks.id = task_logs.task_id),
+                element = (SELECT element FROM tasks WHERE tasks.id = task_logs.task_id)
+            ''');
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

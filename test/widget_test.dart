@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,6 +202,78 @@ void main() {
         isNot(contains(DateTime(2026, 11, 3, 21))));
     expect(scheduler.plans.map((p) => p.first),
         contains(DateTime(2026, 11, 10, 21)));
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets(
+      'tab Lịch sử: lịch tháng, chuỗi ngày, chi tiết ngày, giữ tên task đã xóa',
+      (tester) async {
+    // Cỡ màn hình điện thoại thật, để lịch và chi tiết ngày cùng vừa màn hình.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+    Future<void> addLog(DateTime at, String title, int coins) =>
+        db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+              taskId: 99,
+              kind: LogKind.complete,
+              coinsDelta: Value(coins),
+              createdAt: Value(at),
+              title: Value(title),
+              element: const Value(TaskElement.water),
+            ));
+    await addTask('Chạy bộ', TaskType.daily);
+    await addLog(DateTime(2026, 11, 2, 21), 'Đọc sách', 8);
+    await addLog(DateTime(2026, 10, 15, 9), 'Thiền', 5);
+    await pumpApp(tester);
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    await db.delete(db.tasks).go();
+    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tháng 11, 2026'), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byKey(const Key('streak')), matching: find.text('2')),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byKey(const Key('month-coins')),
+            matching: find.text('18')),
+        findsOneWidget); // 10 + 8
+    expect(find.text('Hỏa 1'), findsOneWidget);
+    expect(find.text('Thủy 1'), findsOneWidget);
+    // Hôm nay được chọn sẵn; task đã xóa vẫn hiện đúng tên.
+    expect(find.text('Thứ Ba, 3/11 · 1 việc tốt'), findsOneWidget);
+    expect(find.text('Chạy bộ'), findsOneWidget);
+    expect(find.text('+10 xu'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('day-2')));
+    await tester.pumpAndSettle();
+    expect(find.text('Thứ Hai, 2/11 · 1 việc tốt'), findsOneWidget);
+    expect(find.text('Đọc sách'), findsOneWidget);
+    expect(find.text('21:00'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('day-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ngày này chưa có hoạt động nào.'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Tháng trước'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tháng 10, 2026'), findsOneWidget);
+    expect(find.text('Chọn một ngày để xem chi tiết.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('day-15')));
+    await tester.pumpAndSettle();
+    expect(find.text('Thiền'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Tháng sau'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tháng 11, 2026'), findsOneWidget);
+    final next = tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.chevron_right));
+    expect(next.onPressed, isNull);
 
     await tearDownApp(tester);
   });
