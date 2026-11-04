@@ -119,6 +119,7 @@ void main() {
     await addTask('Uống nước', TaskType.habit, dailyTarget: 2);
     await pumpApp(tester);
     expect(find.textContaining('0/2 lần hôm nay'), findsOneWidget);
+    expect(find.byTooltip('Bớt một lần'), findsNothing);
 
     await tester.tap(find.byTooltip('Hoàn thành'));
     await tester.pumpAndSettle();
@@ -136,6 +137,70 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('1/2 lần hôm nay'), findsOneWidget);
     expect(coinsShown(tester), '10');
+
+    // Chưa đủ thì vòng tròn chỉ cộng: nút "Bớt một lần" đưa được về 0.
+    await tester.tap(find.byTooltip('Bớt một lần'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('0/2 lần hôm nay'), findsOneWidget);
+    expect(coinsShown(tester), '0');
+    expect(find.byTooltip('Bớt một lần'), findsNothing);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('form cuộn được tới mục cuối, không bị thanh điều hướng che',
+      (tester) async {
+    // Điện thoại có thanh 3 nút cao 48dp, app vẽ tràn xuống dưới nó.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.75;
+    tester.view.padding = const FakeViewPadding(bottom: 48 * 2.75);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 48 * 2.75);
+    addTearDown(tester.view.reset);
+    await pumpApp(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Thói quen'));
+    await tester.pumpAndSettle();
+    // Ẩn bàn phím (tự mở khi tạo mới) rồi cuộn hết cỡ.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -2000));
+    await tester.pumpAndSettle();
+
+    final screenBottom = 2400 / 2.75;
+    final navBarTop = screenBottom - 48;
+    expect(tester.getRect(find.text('Khó')).bottom, lessThan(navBarTop));
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('xoay ngang: thanh điều hướng bên trái không che nội dung',
+      (tester) async {
+    // Khi ngang, thanh 3 nút (48dp) nằm ở cạnh trái màn hình.
+    tester.view.physicalSize = const Size(2400, 1080);
+    tester.view.devicePixelRatio = 2.75;
+    tester.view.padding = const FakeViewPadding(left: 48 * 2.75);
+    tester.view.viewPadding = const FakeViewPadding(left: 48 * 2.75);
+    addTearDown(tester.view.reset);
+    await addTask('Chạy bộ', TaskType.habit);
+    await pumpApp(tester);
+
+    expect(tester.getRect(find.text('Thói quen')).left, greaterThanOrEqualTo(48));
+    expect(tester.getRect(find.byType(Card).first).left, greaterThanOrEqualTo(48));
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(TextFormField).first).left,
+        greaterThanOrEqualTo(48));
+
+    Navigator.of(tester.element(find.text('Tạo mới'))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lịch sử'));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(Card).first).left, greaterThanOrEqualTo(48));
 
     await tearDownApp(tester);
   });

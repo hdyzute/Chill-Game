@@ -22,6 +22,7 @@ class TaskTile extends StatelessWidget {
     required this.onCheck,
     required this.onBad,
     required this.onBuy,
+    this.onUndoOne,
   });
 
   final Task task;
@@ -43,6 +44,16 @@ class TaskTile extends StatelessWidget {
 
   /// Đổi xu lấy phần thưởng.
   final VoidCallback onBuy;
+
+  /// Bớt một lần của thói quen nhiều lần (bấm nhầm). Vòng tròn chỉ cộng khi
+  /// chưa đủ, nên đây là cách duy nhất để từ 1 lần về 0.
+  final VoidCallback? onUndoOne;
+
+  bool get _canUndoOne =>
+      task.type == TaskType.habit &&
+      task.habitUp &&
+      task.dailyTarget > 1 &&
+      todayCount > 0;
 
   bool get _hasCheck =>
       task.type == TaskType.daily ||
@@ -87,11 +98,24 @@ class TaskTile extends StatelessWidget {
         ),
         subtitle: Text(_subtitle()),
         trailing: switch (task.type) {
-          TaskType.habit when task.habitDown => IconButton(
-              tooltip: 'Lỡ làm việc xấu',
-              color: theme.colorScheme.error.withValues(alpha: 0.7),
-              icon: const Icon(Icons.remove_circle_outline),
-              onPressed: onBad,
+          TaskType.habit when task.habitDown || _canUndoOne => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_canUndoOne)
+                  IconButton(
+                    tooltip: 'Bớt một lần',
+                    color: theme.colorScheme.onSurfaceVariant,
+                    icon: const Icon(Icons.undo),
+                    onPressed: onUndoOne,
+                  ),
+                if (task.habitDown)
+                  IconButton(
+                    tooltip: 'Lỡ làm việc xấu',
+                    color: theme.colorScheme.error.withValues(alpha: 0.7),
+                    icon: const Icon(Icons.remove_circle_outline),
+                    onPressed: onBad,
+                  ),
+              ],
             ),
           TaskType.reward => FilledButton.tonalIcon(
               onPressed: onBuy,

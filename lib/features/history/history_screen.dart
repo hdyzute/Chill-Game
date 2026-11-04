@@ -38,7 +38,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             data: (logs) {
               final byDay = groupByDay(logs, hour);
               return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                // Chừa chỗ cho thanh điều hướng bên cạnh khi xoay ngang.
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32) +
+                    MediaQuery.paddingOf(context),
                 children: [
                   _SummaryCard(
                     streak: ref.watch(activeStreakProvider),

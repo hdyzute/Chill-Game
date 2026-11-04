@@ -83,7 +83,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          // Android 15+ vẽ tràn dưới thanh điều hướng (ở dưới khi dọc, bên
+          // cạnh khi ngang): chừa chỗ cho nó để không mục nào bị che.
+          padding: const EdgeInsets.all(16) + MediaQuery.paddingOf(context),
           children: [
             SegmentedButton<TaskType>(
               showSelectedIcon: false,

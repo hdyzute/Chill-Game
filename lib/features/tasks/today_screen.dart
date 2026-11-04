@@ -44,6 +44,8 @@ class TodayScreen extends ConsumerWidget {
                     onCheck: () => _check(context, ref, task, count),
                     onBad: () => _bad(context, ref, task),
                     onBuy: () => _buy(context, ref, task),
+                    onUndoOne: () =>
+                        ref.read(scoreServiceProvider).uncheck(task.id),
                   );
                 },
               ),
@@ -154,7 +156,8 @@ class _TaskList extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.only(bottom: 96),
+      // Chừa chỗ cho nút + và cho thanh điều hướng bên cạnh khi xoay ngang.
+      padding: const EdgeInsets.only(bottom: 96) + MediaQuery.paddingOf(context),
       children: [
         for (final type in TaskType.values)
           if (tasks.any((t) => t.type == type)) ...[
