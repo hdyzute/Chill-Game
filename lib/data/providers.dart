@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/day.dart';
 import '../domain/history.dart';
+import '../domain/pet.dart';
 import '../domain/reminders.dart';
 import 'database.dart';
 import 'history_repository.dart';
 import 'notification_scheduler.dart';
+import 'pet_repository.dart';
 import 'profile_repository.dart';
 import 'rollover_service.dart';
 import 'score_service.dart';
@@ -102,13 +104,46 @@ final monthLogsProvider =
 final _completionTimesProvider = StreamProvider<List<DateTime>>(
     (ref) => ref.watch(historyRepositoryProvider).watchCompletionTimes());
 
-/// Số ngày liên tiếp có làm ít nhất một việc tốt. Null khi chưa tải xong.
-final activeStreakProvider = Provider<int?>((ref) {
+/// Những ngày logic có làm ít nhất một việc tốt. Null khi chưa tải xong.
+final _deedDaysProvider = Provider<Set<DateTime>?>((ref) {
   final times = ref.watch(_completionTimesProvider).value;
   final hour = ref.watch(dayStartHourProvider);
+  if (times == null || hour == null) return null;
+  return {for (final t in times) logicalDate(t, hour)};
+});
+
+/// Số ngày liên tiếp có làm ít nhất một việc tốt. Null khi chưa tải xong.
+final activeStreakProvider = Provider<int?>((ref) {
+  final days = ref.watch(_deedDaysProvider);
   final today = ref.watch(todayProvider);
-  if (times == null || hour == null || today == null) return null;
-  return activeStreak({for (final t in times) logicalDate(t, hour)}, today);
+  if (days == null || today == null) return null;
+  return activeStreak(days, today);
+});
+
+final petRepositoryProvider = Provider((ref) => PetRepository(
+      ref.watch(databaseProvider),
+      clock: ref.watch(clockProvider),
+    ));
+
+/// Linh thú, null khi chưa ký khế ước.
+final petProvider =
+    StreamProvider<Pet?>((ref) => ref.watch(petRepositoryProvider).watch());
+
+/// Giai đoạn và tiến độ ấp của linh thú. Null khi chưa có linh thú hoặc dữ
+/// liệu chưa tải xong.
+final petStatusProvider = Provider<PetStatus?>((ref) {
+  final pet = ref.watch(petProvider).value;
+  final days = ref.watch(_deedDaysProvider);
+  final hour = ref.watch(dayStartHourProvider);
+  final today = ref.watch(todayProvider);
+  if (pet == null || days == null || hour == null || today == null) {
+    return null;
+  }
+  return petStatus(
+    contractDay: logicalDate(pet.createdAt, hour),
+    deedDays: days,
+    today: today,
+  );
 });
 
 /// Số lần hoàn thành hôm nay của từng task (taskId → số lần).

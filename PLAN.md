@@ -40,7 +40,7 @@ Tên tạm: **Linh Thú Kỷ Luật** (đổi sau)
 
 **Vòng đời linh thú (MVP: 1 loài)**
 1. Ký khế ước: chọn trứng, đặt tên, tạo 3 thói quen đầu tiên.
-2. Trứng → **Ấu thú** sau vài ngày hoàn thành task.
+2. Trứng → **Ấu thú** ngay khi có việc tốt đầu tiên sau khi ký khế ước (chờ lâu thì người mới dễ bỏ app).
 3. Ấu thú → **Trưởng thành**: một trong 3 nhánh (Hỏa / Thủy / Mộc) theo điểm hệ cao nhất, cần cấp ≥ X **và** streak ≥ 7 ngày.
 4. Sau này: Linh Thú → Yêu Thú → Thánh Thú → Thần Thú (mốc streak 30 / 100 / 365).
 
@@ -79,10 +79,10 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Giờ bắt đầu ngày, xử lý sang ngày mới, đứt chuỗi khi bỏ lỡ, chế độ bế quan, cất việc cần làm đã xong (bước 1.3)
 - [x] Thông báo nhắc giờ cho daily và thói quen, tự bỏ qua khi đã làm xong (bước 1.4)
 - [x] Lịch sử: lịch tháng tô đậm theo số việc tốt, chi tiết từng ngày, chuỗi ngày liên tiếp, thống kê tháng theo hệ (bước 1.5)
-- ✅ Kiểm tra: bạn tự dùng thật 1 tuần
+- ✅ Kiểm tra: bạn tự dùng thật 1 tuần (bắt đầu 4/11/2026, chạy song song với Giai đoạn 2)
 
 **Giai đoạn 2: Linh thú**
-- [ ] Màn hình khế ước (chọn trứng), màn hình nhà của pet
+- [x] Màn hình khế ước (đặt tên, nhận trứng), trứng nở từ việc tốt đầu tiên, màn hình nhà của pet với hình tạm (bước 2.1). Chưa có bước chọn trứng vì MVP chỉ có 1 loài
 - [ ] Xu, linh vật, bạo kích, rơi đồ có giới hạn mỗi ngày, phần thưởng tự đặt
 - [ ] Hấp thụ linh vật → EXP và điểm hệ; tâm trạng; tiến hóa theo nhánh
 - ✅ Kiểm tra: 3–5 người bạn dùng thử 2 tuần, xem họ có mở app đều không

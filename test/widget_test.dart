@@ -349,8 +349,75 @@ void main() {
     await tester.tap(find.byIcon(Icons.pets_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('Linh thú của bạn đang ngủ trong trứng...'),
-        findsOneWidget);
+    expect(find.text('Khế ước linh thú'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('ký khế ước rồi làm việc tốt đầu tiên thì trứng nở',
+      (tester) async {
+    await addTask('Uống nước', TaskType.habit);
+    await pumpApp(tester);
+    await tester.tap(find.byIcon(Icons.pets_outlined));
+    await tester.pumpAndSettle();
+
+    final sign = find.widgetWithText(FilledButton, 'Ký khế ước');
+    expect(tester.widget<FilledButton>(sign).onPressed, isNull);
+    await tester.enterText(find.byType(TextField), '  Mochi ');
+    await tester.pump();
+    await tester.ensureVisible(sign);
+    await tester.pumpAndSettle();
+    await tester.tap(sign);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mochi'), findsOneWidget);
+    expect(find.text('Trứng · Bên nhau 1 ngày'), findsOneWidget);
+    expect(find.text('Còn 1 ngày có việc tốt nữa là nở'), findsOneWidget);
+    expect(find.textContaining('nằm im'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.check_circle_outline));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.pets_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ấu thú · Bên nhau 1 ngày'), findsOneWidget);
+    expect(find.byKey(const Key('hatch-progress')), findsNothing);
+    expect(find.text('Mochi vui vẻ quấn quýt bên bạn.'), findsOneWidget);
+    expect(await db.select(db.pets).get(), hasLength(1));
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('ngày nở là ngày có việc tốt đầu tiên, đổi tên được',
+      (tester) async {
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi', createdAt: DateTime(2026, 10, 31, 20)));
+    for (final day in [31, 1, 2]) {
+      await db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+            taskId: 1,
+            kind: LogKind.complete,
+            createdAt: Value(DateTime(2026, day == 31 ? 10 : 11, day, 9)),
+          ));
+    }
+    await pumpApp(tester);
+    await tester.tap(find.byIcon(Icons.pets_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ấu thú · Bên nhau 4 ngày'), findsOneWidget);
+    expect(find.textContaining('31/10'), findsOneWidget);
+    expect(find.byKey(const Key('hatch-progress')), findsNothing);
+    expect(find.textContaining('đang chờ việc tốt'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Đổi tên'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Bánh Bao');
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bánh Bao'), findsOneWidget);
+    expect((await db.select(db.pets).getSingle()).name, 'Bánh Bao');
 
     await tearDownApp(tester);
   });

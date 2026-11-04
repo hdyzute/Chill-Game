@@ -86,13 +86,22 @@ class Profiles extends Table {
 
 const profileId = 1;
 
-@DriftDatabase(tables: [Tasks, TaskLogs, Profiles])
+/// Linh thú đã ký khế ước. Bản đầu chỉ có một con (dòng đầu tiên).
+class Pets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 20)();
+
+  /// Lúc ký khế ước. Trứng chỉ tính việc tốt từ ngày (logic) này.
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+@DriftDatabase(tables: [Tasks, TaskLogs, Profiles, Pets])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -126,6 +135,9 @@ class AppDatabase extends _$AppDatabase {
                 title = (SELECT title FROM tasks WHERE tasks.id = task_logs.task_id),
                 element = (SELECT element FROM tasks WHERE tasks.id = task_logs.task_id)
             ''');
+          },
+          from6To7: (m, schema) async {
+            await m.createTable(schema.pets);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

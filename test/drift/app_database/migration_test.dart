@@ -13,6 +13,7 @@ import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
+import 'generated/schema_v7.dart' as v7;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -290,6 +291,66 @@ void main() {
         expect(logs.map((l) => l.coinsDelta), [15, 10]);
         expect((await newDb.select(newDb.tasks).getSingle()).reminderMinutes,
             420);
+      },
+    );
+  });
+
+  // Bản 7 thêm bảng linh thú: dữ liệu cũ giữ nguyên, chưa có linh thú nào.
+  test('nâng cấp v6 lên v7: giữ task, nhật ký, xu; chưa có linh thú',
+      () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 6,
+      newVersion: 7,
+      createOld: v6.DatabaseAtV6.new,
+      createNew: v7.DatabaseAtV7.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.tasks, const [
+          v6.TasksData(
+            id: 1,
+            title: 'Luyện nói tiếng anh',
+            notes: null,
+            type: 'habit',
+            difficulty: 'medium',
+            element: 'fire',
+            habitUp: 1,
+            habitDown: 0,
+            dailyTarget: 2,
+            repeatDays: 0x7f,
+            reminderMinutes: null,
+            cost: 0,
+            value: 1,
+            streak: 0,
+            completed: 0,
+            archived: 0,
+            sortOrder: 0,
+            createdAt: 1793600000,
+          ),
+        ]);
+        batch.insertAll(oldDb.taskLogs, const [
+          v6.TaskLogsData(
+            id: 1,
+            taskId: 1,
+            kind: 'complete',
+            valueDelta: 1,
+            coinsDelta: 15,
+            streakDelta: 0,
+            critical: 0,
+            createdAt: 1793700000,
+            title: 'Luyện nói tiếng anh',
+            element: 'fire',
+          ),
+        ]);
+        batch.insert(oldDb.profiles,
+            const v6.ProfilesData(
+                id: profileId, coins: 15, dayStartHour: 0, resting: 0));
+      },
+      validateItems: (newDb) async {
+        expect((await newDb.select(newDb.tasks).getSingle()).dailyTarget, 2);
+        expect((await newDb.select(newDb.taskLogs).getSingle()).coinsDelta,
+            15);
+        expect((await newDb.select(newDb.profiles).getSingle()).coins, 15);
+        expect(await newDb.select(newDb.pets).get(), isEmpty);
       },
     );
   });
