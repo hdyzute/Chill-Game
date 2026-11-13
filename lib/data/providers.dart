@@ -101,15 +101,15 @@ final monthLogsProvider =
       );
 });
 
-final _completionTimesProvider = StreamProvider<List<DateTime>>(
-    (ref) => ref.watch(historyRepositoryProvider).watchCompletionTimes());
+final _completionsProvider = StreamProvider<List<Completion>>(
+    (ref) => ref.watch(historyRepositoryProvider).watchCompletions());
 
 /// Những ngày logic có làm ít nhất một việc tốt. Null khi chưa tải xong.
 final _deedDaysProvider = Provider<Set<DateTime>?>((ref) {
-  final times = ref.watch(_completionTimesProvider).value;
+  final completions = ref.watch(_completionsProvider).value;
   final hour = ref.watch(dayStartHourProvider);
-  if (times == null || hour == null) return null;
-  return {for (final t in times) logicalDate(t, hour)};
+  if (completions == null || hour == null) return null;
+  return {for (final c in completions) logicalDate(c.at, hour)};
 });
 
 /// Số ngày liên tiếp có làm ít nhất một việc tốt. Null khi chưa tải xong.
@@ -167,6 +167,23 @@ final petStatusProvider = Provider<PetStatus?>((ref) {
     badToday: bad,
     resting: resting,
   );
+});
+
+/// Cây trên Linh điền, theo ô.
+final plantingsProvider = StreamProvider<List<Planting>>(
+    (ref) => ref.watch(scoreServiceProvider).watchPlantings());
+
+/// Số việc tốt cùng hệ đã làm từ lúc gieo, theo ô. Null khi chưa tải xong.
+final fieldBoostsProvider = Provider<Map<int, int>?>((ref) {
+  final plantings = ref.watch(plantingsProvider).value;
+  final completions = ref.watch(_completionsProvider).value;
+  if (plantings == null || completions == null) return null;
+  return {
+    for (final p in plantings)
+      p.plot: completions
+          .where((c) => c.element == p.element && !c.at.isBefore(p.plantedAt))
+          .length,
+  };
 });
 
 /// Túi linh vật: số lượng từng loại đang có.

@@ -5,6 +5,7 @@ import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:linh_thu_ky_luat/data/profile_repository.dart';
 import 'package:linh_thu_ky_luat/data/score_service.dart';
 import 'package:linh_thu_ky_luat/domain/drops.dart';
+import 'package:linh_thu_ky_luat/domain/field.dart';
 import 'package:linh_thu_ky_luat/domain/growth.dart';
 
 import '../helpers.dart';
@@ -301,6 +302,55 @@ void main() {
       await expectLater(
           service.absorb(SpiritItem.fireRare), throwsStateError);
       expect(await bag(), {SpiritItem.fireRare: 1});
+    });
+  });
+
+  group('Linh điền', () {
+    Future<Map<SpiritItem, int>> bag() => service.watchInventory().first;
+
+    Future<void> setCoins(int value) =>
+        (db.update(db.profiles)..where((p) => p.id.equals(profileId)))
+            .write(ProfilesCompanion(coins: Value(value)));
+
+    test('gieo hạt trừ xu; thiếu xu hoặc ô đã có cây thì không gieo được',
+        () async {
+      await setCoins(20);
+      expect(await service.plant(0, TaskElement.water), isTrue);
+      expect(await coins(), 20 - Field.seedCost);
+      final planting = (await service.watchPlantings().first).single;
+      expect([planting.plot, planting.element, planting.plantedAt],
+          [0, TaskElement.water, now]);
+
+      expect(await service.plant(1, TaskElement.fire), isFalse);
+      expect(await coins(), 20 - Field.seedCost);
+      await expectLater(service.plant(0, TaskElement.fire), throwsStateError);
+      await expectLater(
+          service.plant(Field.plots, TaskElement.fire), throwsStateError);
+    });
+
+    test('chưa chín thì không thu hoạch được; chín rồi thì vào túi',
+        () async {
+      await setCoins(Field.seedCost);
+      await service.plant(2, TaskElement.wood);
+      now = now.add(const Duration(hours: 7, minutes: 59));
+      await expectLater(service.harvest(2), throwsStateError);
+
+      now = now.add(const Duration(minutes: 1));
+      final items = await service.harvest(2);
+      expect(items, [SpiritItem.woodCommon, SpiritItem.woodCommon]);
+      expect(await bag(), {SpiritItem.woodCommon: 2});
+      expect(await service.watchPlantings().first, isEmpty);
+      await expectLater(service.harvest(2), throwsStateError);
+    });
+
+    test('việc tốt cùng hệ sau khi gieo làm cây chín sớm', () async {
+      await setCoins(Field.seedCost);
+      await service.plant(0, TaskElement.fire);
+      // Hai việc tốt hệ Hỏa (addTask tạo task hệ Hỏa): chín sau 6 giờ.
+      await service.score(await addTask(TaskType.todo));
+      await service.score(await addTask(TaskType.daily));
+      now = now.add(const Duration(hours: 6));
+      expect(await service.harvest(0), hasLength(Field.harvestCount));
     });
   });
 }

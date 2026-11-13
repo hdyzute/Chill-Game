@@ -482,6 +482,8 @@ void main() {
     final absorb = find.byKey(const Key('absorb-fireCommon'));
     await tester.scrollUntilVisible(absorb, 200,
         scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(absorb);
+    await tester.pumpAndSettle();
     await tester.tap(absorb);
     await tester.pumpAndSettle();
     expect(find.text('Mochi hấp thụ Hỏa Linh Quả: +10 EXP, +1 Hỏa'),
@@ -562,6 +564,74 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<FilledButton>(evolve).onPressed, isNull);
     expect(find.textContaining('đang 1 ngày'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+    await tester.scrollUntilVisible(finder, 200,
+        scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Linh điền: gieo hạt bằng xu, cây đếm giờ', (tester) async {
+    phoneView(tester);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi', createdAt: DateTime(2026, 11, 3, 8)));
+    await (db.update(db.profiles)..where((p) => p.id.equals(profileId)))
+        .write(const ProfilesCompanion(coins: Value(20)));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    final plot = find.byKey(const Key('plot-1'));
+    await scrollTo(tester, plot);
+    await tester.tap(plot);
+    await tester.pumpAndSettle();
+    expect(find.text('Mỗi hạt 15 xu · bạn đang có 20 xu'), findsOneWidget);
+    await tester.tap(find.text('Hạt Thủy'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đã gieo hạt Thủy. Chín sau 8 giờ.'), findsOneWidget);
+    expect(
+        find.descendant(of: plot, matching: find.text('Còn 8 giờ')),
+        findsOneWidget);
+    expect((await db.select(db.profiles).getSingle()).coins, 5);
+
+    // Chỉ còn 5 xu: không gieo thêm được.
+    await tester.tap(find.byKey(const Key('plot-0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa đủ xu. Làm việc tốt để kiếm thêm nhé.'),
+        findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('Linh điền: cây chín thì thu hoạch vào túi', (tester) async {
+    phoneView(tester);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi', createdAt: DateTime(2026, 11, 3, 8)));
+    await db.into(db.plantings).insert(PlantingsCompanion.insert(
+        plot: const Value(0),
+        element: TaskElement.water,
+        plantedAt: DateTime(2026, 11, 3, 1)));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    final plot = find.byKey(const Key('plot-0'));
+    await scrollTo(tester, plot);
+    expect(find.descendant(of: plot, matching: find.text('Thu hoạch')),
+        findsOneWidget);
+    await tester.tap(plot);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Thu hoạch được 2 Thủy Tinh Lộ'), findsOneWidget);
+    expect(find.descendant(of: plot, matching: find.text('Gieo hạt')),
+        findsOneWidget);
+    expect(await db.select(db.plantings).get(), isEmpty);
+    await scrollTo(tester, find.byKey(const Key('item-waterCommon')));
+    expect(tester.widget<Text>(find.byKey(const Key('item-waterCommon'))).data,
+        '×2');
 
     await tearDownApp(tester);
   });

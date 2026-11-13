@@ -16,6 +16,7 @@ import 'generated/schema_v6.dart' as v6;
 import 'generated/schema_v7.dart' as v7;
 import 'generated/schema_v8.dart' as v8;
 import 'generated/schema_v9.dart' as v9;
+import 'generated/schema_v10.dart' as v10;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -423,6 +424,38 @@ void main() {
         expect(pet.evolvedAt, isNull);
         expect((await newDb.select(newDb.inventoryItems).getSingle()).count,
             3);
+      },
+    );
+  });
+
+  // Bản 10 thêm Linh điền: chưa có cây nào, linh thú và túi đồ giữ nguyên.
+  test('nâng cấp v9 lên v10: linh điền trống, giữ linh thú và túi', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 9,
+      newVersion: 10,
+      createOld: v9.DatabaseAtV9.new,
+      createNew: v10.DatabaseAtV10.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(
+            oldDb.pets,
+            const v9.PetsData(
+                id: 1,
+                name: 'Abcdef',
+                createdAt: 1793700000,
+                exp: 70,
+                firePoints: 5,
+                waterPoints: 2,
+                woodPoints: 0));
+        batch.insert(oldDb.inventoryItems,
+            const v9.InventoryItemsData(item: 'waterRare', count: 1));
+      },
+      validateItems: (newDb) async {
+        final pet = await newDb.select(newDb.pets).getSingle();
+        expect([pet.exp, pet.firePoints, pet.waterPoints], [70, 5, 2]);
+        expect((await newDb.select(newDb.inventoryItems).getSingle()).item,
+            'waterRare');
+        expect(await newDb.select(newDb.plantings).get(), isEmpty);
       },
     );
   });

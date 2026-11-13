@@ -2873,6 +2873,261 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
   }
 }
 
+class $PlantingsTable extends Plantings
+    with TableInfo<$PlantingsTable, Planting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlantingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _plotMeta = const VerificationMeta('plot');
+  @override
+  late final GeneratedColumn<int> plot = GeneratedColumn<int>(
+    'plot',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TaskElement, String> element =
+      GeneratedColumn<String>(
+        'element',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<TaskElement>($PlantingsTable.$converterelement);
+  static const VerificationMeta _plantedAtMeta = const VerificationMeta(
+    'plantedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> plantedAt = GeneratedColumn<DateTime>(
+    'planted_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [plot, element, plantedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'plantings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Planting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('plot')) {
+      context.handle(
+        _plotMeta,
+        plot.isAcceptableOrUnknown(data['plot']!, _plotMeta),
+      );
+    }
+    if (data.containsKey('planted_at')) {
+      context.handle(
+        _plantedAtMeta,
+        plantedAt.isAcceptableOrUnknown(data['planted_at']!, _plantedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_plantedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {plot};
+  @override
+  Planting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Planting(
+      plot: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plot'],
+      )!,
+      element: $PlantingsTable.$converterelement.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}element'],
+        )!,
+      ),
+      plantedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}planted_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlantingsTable createAlias(String alias) {
+    return $PlantingsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<TaskElement, String, String> $converterelement =
+      const EnumNameConverter<TaskElement>(TaskElement.values);
+}
+
+class Planting extends DataClass implements Insertable<Planting> {
+  final int plot;
+  final TaskElement element;
+  final DateTime plantedAt;
+  const Planting({
+    required this.plot,
+    required this.element,
+    required this.plantedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['plot'] = Variable<int>(plot);
+    {
+      map['element'] = Variable<String>(
+        $PlantingsTable.$converterelement.toSql(element),
+      );
+    }
+    map['planted_at'] = Variable<DateTime>(plantedAt);
+    return map;
+  }
+
+  PlantingsCompanion toCompanion(bool nullToAbsent) {
+    return PlantingsCompanion(
+      plot: Value(plot),
+      element: Value(element),
+      plantedAt: Value(plantedAt),
+    );
+  }
+
+  factory Planting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Planting(
+      plot: serializer.fromJson<int>(json['plot']),
+      element: $PlantingsTable.$converterelement.fromJson(
+        serializer.fromJson<String>(json['element']),
+      ),
+      plantedAt: serializer.fromJson<DateTime>(json['plantedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'plot': serializer.toJson<int>(plot),
+      'element': serializer.toJson<String>(
+        $PlantingsTable.$converterelement.toJson(element),
+      ),
+      'plantedAt': serializer.toJson<DateTime>(plantedAt),
+    };
+  }
+
+  Planting copyWith({int? plot, TaskElement? element, DateTime? plantedAt}) =>
+      Planting(
+        plot: plot ?? this.plot,
+        element: element ?? this.element,
+        plantedAt: plantedAt ?? this.plantedAt,
+      );
+  Planting copyWithCompanion(PlantingsCompanion data) {
+    return Planting(
+      plot: data.plot.present ? data.plot.value : this.plot,
+      element: data.element.present ? data.element.value : this.element,
+      plantedAt: data.plantedAt.present ? data.plantedAt.value : this.plantedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Planting(')
+          ..write('plot: $plot, ')
+          ..write('element: $element, ')
+          ..write('plantedAt: $plantedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(plot, element, plantedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Planting &&
+          other.plot == this.plot &&
+          other.element == this.element &&
+          other.plantedAt == this.plantedAt);
+}
+
+class PlantingsCompanion extends UpdateCompanion<Planting> {
+  final Value<int> plot;
+  final Value<TaskElement> element;
+  final Value<DateTime> plantedAt;
+  const PlantingsCompanion({
+    this.plot = const Value.absent(),
+    this.element = const Value.absent(),
+    this.plantedAt = const Value.absent(),
+  });
+  PlantingsCompanion.insert({
+    this.plot = const Value.absent(),
+    required TaskElement element,
+    required DateTime plantedAt,
+  }) : element = Value(element),
+       plantedAt = Value(plantedAt);
+  static Insertable<Planting> custom({
+    Expression<int>? plot,
+    Expression<String>? element,
+    Expression<DateTime>? plantedAt,
+  }) {
+    return RawValuesInsertable({
+      if (plot != null) 'plot': plot,
+      if (element != null) 'element': element,
+      if (plantedAt != null) 'planted_at': plantedAt,
+    });
+  }
+
+  PlantingsCompanion copyWith({
+    Value<int>? plot,
+    Value<TaskElement>? element,
+    Value<DateTime>? plantedAt,
+  }) {
+    return PlantingsCompanion(
+      plot: plot ?? this.plot,
+      element: element ?? this.element,
+      plantedAt: plantedAt ?? this.plantedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (plot.present) {
+      map['plot'] = Variable<int>(plot.value);
+    }
+    if (element.present) {
+      map['element'] = Variable<String>(
+        $PlantingsTable.$converterelement.toSql(element.value),
+      );
+    }
+    if (plantedAt.present) {
+      map['planted_at'] = Variable<DateTime>(plantedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlantingsCompanion(')
+          ..write('plot: $plot, ')
+          ..write('element: $element, ')
+          ..write('plantedAt: $plantedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2881,6 +3136,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $PetsTable pets = $PetsTable(this);
   late final $InventoryItemsTable inventoryItems = $InventoryItemsTable(this);
+  late final $PlantingsTable plantings = $PlantingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2891,6 +3147,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     profiles,
     pets,
     inventoryItems,
+    plantings,
   ];
 }
 
@@ -4305,6 +4562,164 @@ typedef $$InventoryItemsTableProcessedTableManager =
       InventoryItem,
       PrefetchHooks Function()
     >;
+typedef $$PlantingsTableCreateCompanionBuilder = PlantingsCompanion Function({
+  Value<int> plot,
+  required TaskElement element,
+  required DateTime plantedAt,
+});
+typedef $$PlantingsTableUpdateCompanionBuilder = PlantingsCompanion Function({
+  Value<int> plot,
+  Value<TaskElement> element,
+  Value<DateTime> plantedAt,
+});
+
+class $$PlantingsTableFilterComposer
+    extends Composer<_$AppDatabase, $PlantingsTable> {
+  $$PlantingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get plot => $composableBuilder(
+    column: $table.plot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TaskElement, TaskElement, String>
+  get element => $composableBuilder(
+    column: $table.element,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get plantedAt => $composableBuilder(
+    column: $table.plantedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PlantingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlantingsTable> {
+  $$PlantingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get plot => $composableBuilder(
+    column: $table.plot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get element => $composableBuilder(
+    column: $table.element,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get plantedAt => $composableBuilder(
+    column: $table.plantedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PlantingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlantingsTable> {
+  $$PlantingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get plot =>
+      $composableBuilder(column: $table.plot, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TaskElement, String> get element =>
+      $composableBuilder(column: $table.element, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get plantedAt =>
+      $composableBuilder(column: $table.plantedAt, builder: (column) => column);
+}
+
+class $$PlantingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlantingsTable,
+          Planting,
+          $$PlantingsTableFilterComposer,
+          $$PlantingsTableOrderingComposer,
+          $$PlantingsTableAnnotationComposer,
+          $$PlantingsTableCreateCompanionBuilder,
+          $$PlantingsTableUpdateCompanionBuilder,
+          (Planting, BaseReferences<_$AppDatabase, $PlantingsTable, Planting>),
+          Planting,
+          PrefetchHooks Function()
+        > {
+  $$PlantingsTableTableManager(_$AppDatabase db, $PlantingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlantingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlantingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlantingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> plot = const Value.absent(),
+                Value<TaskElement> element = const Value.absent(),
+                Value<DateTime> plantedAt = const Value.absent(),
+              }) => PlantingsCompanion(
+                plot: plot,
+                element: element,
+                plantedAt: plantedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> plot = const Value.absent(),
+                required TaskElement element,
+                required DateTime plantedAt,
+              }) => PlantingsCompanion.insert(
+                plot: plot,
+                element: element,
+                plantedAt: plantedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PlantingsTable, Planting>(table),
+                  BaseReferences<_$AppDatabase, $PlantingsTable, Planting>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PlantingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlantingsTable,
+      Planting,
+      $$PlantingsTableFilterComposer,
+      $$PlantingsTableOrderingComposer,
+      $$PlantingsTableAnnotationComposer,
+      $$PlantingsTableCreateCompanionBuilder,
+      $$PlantingsTableUpdateCompanionBuilder,
+      (Planting, BaseReferences<_$AppDatabase, $PlantingsTable, Planting>),
+      Planting,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4318,4 +4733,6 @@ class $AppDatabaseManager {
   $$PetsTableTableManager get pets => $$PetsTableTableManager(_db, _db.pets);
   $$InventoryItemsTableTableManager get inventoryItems =>
       $$InventoryItemsTableTableManager(_db, _db.inventoryItems);
+  $$PlantingsTableTableManager get plantings =>
+      $$PlantingsTableTableManager(_db, _db.plantings);
 }

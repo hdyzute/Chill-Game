@@ -88,7 +88,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - ✅ Kiểm tra: 3–5 người bạn dùng thử 2 tuần, xem họ có mở app đều không
 
 **Giai đoạn 3: Linh điền + widget**
-- [ ] Gieo hạt, cây lớn theo thời gian thực, thu hoạch ra linh vật
+- [x] Gieo hạt, cây lớn theo thời gian thực, thu hoạch ra linh vật (bước 3.1): 3 ô đất trong tab Linh thú, hạt 15 xu, chín sau 8 giờ, mỗi việc tốt cùng hệ giúp chín sớm 1 giờ, thu 2 linh vật cùng hệ (không tính vào giới hạn 5 món/ngày)
 - [ ] Widget hiện pet và việc hôm nay
 
 **Giai đoạn 4: Bí cảnh và boss (một mình)**

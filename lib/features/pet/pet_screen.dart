@@ -9,6 +9,7 @@ import '../../domain/growth.dart';
 import '../../domain/history.dart';
 import '../../domain/pet.dart';
 import '../tasks/task_style.dart';
+import 'field_card.dart';
 import 'pet_art.dart';
 
 /// Tab Linh thú: khế ước khi chưa có linh thú, sau đó là nhà của nó.
@@ -167,6 +168,8 @@ class _PetHome extends ConsumerWidget {
               ),
             ),
         ],
+        const SizedBox(height: 8),
+        const FieldCard(),
         const SizedBox(height: 8),
         _BagCard(pet: pet, canAbsorb: !egg),
         const SizedBox(height: 24),

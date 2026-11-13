@@ -121,13 +121,26 @@ class InventoryItems extends Table {
   Set<Column> get primaryKey => {item};
 }
 
-@DriftDatabase(tables: [Tasks, TaskLogs, Profiles, Pets, InventoryItems])
+/// Linh điền: cây đang trồng ở từng ô (0 tới Field.plots − 1). Ô trống thì
+/// không có dòng; thu hoạch xong thì xóa dòng. Chỉ ScoreService ghi, vì gieo
+/// hạt tốn xu và thu hoạch thêm linh vật vào túi.
+class Plantings extends Table {
+  IntColumn get plot => integer()();
+  TextColumn get element => textEnum<TaskElement>()();
+  DateTimeColumn get plantedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {plot};
+}
+
+@DriftDatabase(
+    tables: [Tasks, TaskLogs, Profiles, Pets, InventoryItems, Plantings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -177,6 +190,9 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(schema.pets, schema.pets.woodPoints);
             await m.addColumn(schema.pets, schema.pets.branch);
             await m.addColumn(schema.pets, schema.pets.evolvedAt);
+          },
+          from9To10: (m, schema) async {
+            await m.createTable(schema.plantings);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

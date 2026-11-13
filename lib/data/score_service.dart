@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/day.dart';
 import '../domain/drops.dart';
+import '../domain/field.dart';
 import '../domain/growth.dart';
 import '../domain/scoring.dart';
 import 'database.dart';
@@ -70,6 +71,50 @@ class ScoreService {
       ..where(_db.taskLogs.kind.equalsValue(LogKind.bad) &
           _db.taskLogs.createdAt.isBiggerOrEqualValue(since));
     return query.watchSingle().map((row) => row.read(count)!);
+  }
+
+  /// Cây đang trồng trên Linh điền, theo thứ tự ô.
+  Stream<List<Planting>> watchPlantings() => (_db.select(_db.plantings)
+        ..orderBy([(p) => OrderingTerm(expression: p.plot)]))
+      .watch();
+
+  /// Gieo hạt [element] vào ô [plot], trả [Field.seedCost] xu. Trả về false
+  /// khi chưa đủ xu; ném [StateError] khi ô không tồn tại hoặc đang có cây.
+  Future<bool> plant(int plot, TaskElement element) {
+    return _db.transaction(() async {
+      if (plot < 0 || plot >= Field.plots) {
+        throw StateError('Không có ô $plot');
+      }
+      if (await _planting(plot) != null) {
+        throw StateError('Ô $plot đang có cây');
+      }
+      if (await _coins() < Field.seedCost) return false;
+      await _addCoins(-Field.seedCost);
+      await _db.into(_db.plantings).insert(PlantingsCompanion.insert(
+          plot: Value(plot), element: element, plantedAt: _clock()));
+      return true;
+    });
+  }
+
+  /// Thu hoạch ô [plot]: linh vật vào túi, ô trống trở lại. Ném
+  /// [StateError] khi ô trống hoặc cây chưa chín.
+  Future<List<SpiritItem>> harvest(int plot) {
+    return _db.transaction(() async {
+      final planting = await _planting(plot);
+      if (planting == null) throw StateError('Ô $plot đang trống');
+      final boosts = await _boosts(planting);
+      if (_clock().isBefore(Field.readyAt(planting.plantedAt, boosts))) {
+        throw StateError('Cây ở ô $plot chưa chín');
+      }
+      final items = Field.harvest(planting.element,
+          [for (var i = 0; i < Field.harvestCount; i++) _random.nextDouble()]);
+      for (final item in items) {
+        await _addItem(item, 1);
+      }
+      await (_db.delete(_db.plantings)..where((p) => p.plot.equals(plot)))
+          .go();
+      return items;
+    });
   }
 
   /// Linh thú hấp thụ một [item] trong túi: +EXP và +điểm hệ. Ném
@@ -242,6 +287,20 @@ class ScoreService {
   Future<void> _addCoins(int delta) async {
     if (delta == 0) return;
     await _setCoins(await _coins() + delta);
+  }
+
+  Future<Planting?> _planting(int plot) =>
+      (_db.select(_db.plantings)..where((p) => p.plot.equals(plot)))
+          .getSingleOrNull();
+
+  /// Số việc tốt cùng hệ với cây, làm từ lúc gieo.
+  Future<int> _boosts(Planting planting) async {
+    final count = _db.taskLogs.id.count();
+    final query = _db.selectOnly(_db.taskLogs)
+      ..addColumns([count])
+      ..where(_completedSince(planting.plantedAt) &
+          _db.taskLogs.element.equalsValue(planting.element));
+    return (await query.getSingle()).read(count)!;
   }
 
   Future<Pet?> _pet() => (_db.select(_db.pets)
