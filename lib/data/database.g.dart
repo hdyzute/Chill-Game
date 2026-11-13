@@ -2135,8 +2135,84 @@ class $PetsTable extends Pets with TableInfo<$PetsTable, Pet> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _expMeta = const VerificationMeta('exp');
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  late final GeneratedColumn<int> exp = GeneratedColumn<int>(
+    'exp',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _firePointsMeta = const VerificationMeta(
+    'firePoints',
+  );
+  @override
+  late final GeneratedColumn<int> firePoints = GeneratedColumn<int>(
+    'fire_points',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _waterPointsMeta = const VerificationMeta(
+    'waterPoints',
+  );
+  @override
+  late final GeneratedColumn<int> waterPoints = GeneratedColumn<int>(
+    'water_points',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _woodPointsMeta = const VerificationMeta(
+    'woodPoints',
+  );
+  @override
+  late final GeneratedColumn<int> woodPoints = GeneratedColumn<int>(
+    'wood_points',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TaskElement?, String> branch =
+      GeneratedColumn<String>(
+        'branch',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<TaskElement?>($PetsTable.$converterbranchn);
+  static const VerificationMeta _evolvedAtMeta = const VerificationMeta(
+    'evolvedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> evolvedAt = GeneratedColumn<DateTime>(
+    'evolved_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    createdAt,
+    exp,
+    firePoints,
+    waterPoints,
+    woodPoints,
+    branch,
+    evolvedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2168,6 +2244,39 @@ class $PetsTable extends Pets with TableInfo<$PetsTable, Pet> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('exp')) {
+      context.handle(
+        _expMeta,
+        exp.isAcceptableOrUnknown(data['exp']!, _expMeta),
+      );
+    }
+    if (data.containsKey('fire_points')) {
+      context.handle(
+        _firePointsMeta,
+        firePoints.isAcceptableOrUnknown(data['fire_points']!, _firePointsMeta),
+      );
+    }
+    if (data.containsKey('water_points')) {
+      context.handle(
+        _waterPointsMeta,
+        waterPoints.isAcceptableOrUnknown(
+          data['water_points']!,
+          _waterPointsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wood_points')) {
+      context.handle(
+        _woodPointsMeta,
+        woodPoints.isAcceptableOrUnknown(data['wood_points']!, _woodPointsMeta),
+      );
+    }
+    if (data.containsKey('evolved_at')) {
+      context.handle(
+        _evolvedAtMeta,
+        evolvedAt.isAcceptableOrUnknown(data['evolved_at']!, _evolvedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -2189,6 +2298,32 @@ class $PetsTable extends Pets with TableInfo<$PetsTable, Pet> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      exp: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}exp'],
+      )!,
+      firePoints: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fire_points'],
+      )!,
+      waterPoints: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}water_points'],
+      )!,
+      woodPoints: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}wood_points'],
+      )!,
+      branch: $PetsTable.$converterbranchn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}branch'],
+        ),
+      ),
+      evolvedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}evolved_at'],
+      ),
     );
   }
 
@@ -2196,6 +2331,11 @@ class $PetsTable extends Pets with TableInfo<$PetsTable, Pet> {
   $PetsTable createAlias(String alias) {
     return $PetsTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<TaskElement, String, String> $converterbranch =
+      const EnumNameConverter<TaskElement>(TaskElement.values);
+  static JsonTypeConverter2<TaskElement?, String?, String?> $converterbranchn =
+      JsonTypeConverter2.asNullable($converterbranch);
 }
 
 class Pet extends DataClass implements Insertable<Pet> {
@@ -2204,13 +2344,47 @@ class Pet extends DataClass implements Insertable<Pet> {
 
   /// Lúc ký khế ước. Trứng chỉ tính việc tốt từ ngày (logic) này.
   final DateTime createdAt;
-  const Pet({required this.id, required this.name, required this.createdAt});
+
+  /// Tổng EXP từ linh vật đã hấp thụ; cấp tính từ đây (xem growth.dart).
+  final int exp;
+
+  /// Điểm từng hệ, quyết định nhánh khi tiến hóa.
+  final int firePoints;
+  final int waterPoints;
+  final int woodPoints;
+
+  /// Nhánh đã tiến hóa (Trưởng thành). Null khi chưa tiến hóa.
+  final TaskElement? branch;
+  final DateTime? evolvedAt;
+  const Pet({
+    required this.id,
+    required this.name,
+    required this.createdAt,
+    required this.exp,
+    required this.firePoints,
+    required this.waterPoints,
+    required this.woodPoints,
+    this.branch,
+    this.evolvedAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['exp'] = Variable<int>(exp);
+    map['fire_points'] = Variable<int>(firePoints);
+    map['water_points'] = Variable<int>(waterPoints);
+    map['wood_points'] = Variable<int>(woodPoints);
+    if (!nullToAbsent || branch != null) {
+      map['branch'] = Variable<String>(
+        $PetsTable.$converterbranchn.toSql(branch),
+      );
+    }
+    if (!nullToAbsent || evolvedAt != null) {
+      map['evolved_at'] = Variable<DateTime>(evolvedAt);
+    }
     return map;
   }
 
@@ -2219,6 +2393,16 @@ class Pet extends DataClass implements Insertable<Pet> {
       id: Value(id),
       name: Value(name),
       createdAt: Value(createdAt),
+      exp: Value(exp),
+      firePoints: Value(firePoints),
+      waterPoints: Value(waterPoints),
+      woodPoints: Value(woodPoints),
+      branch: branch == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branch),
+      evolvedAt: evolvedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(evolvedAt),
     );
   }
 
@@ -2231,6 +2415,14 @@ class Pet extends DataClass implements Insertable<Pet> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      exp: serializer.fromJson<int>(json['exp']),
+      firePoints: serializer.fromJson<int>(json['firePoints']),
+      waterPoints: serializer.fromJson<int>(json['waterPoints']),
+      woodPoints: serializer.fromJson<int>(json['woodPoints']),
+      branch: $PetsTable.$converterbranchn.fromJson(
+        serializer.fromJson<String?>(json['branch']),
+      ),
+      evolvedAt: serializer.fromJson<DateTime?>(json['evolvedAt']),
     );
   }
   @override
@@ -2240,19 +2432,55 @@ class Pet extends DataClass implements Insertable<Pet> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'exp': serializer.toJson<int>(exp),
+      'firePoints': serializer.toJson<int>(firePoints),
+      'waterPoints': serializer.toJson<int>(waterPoints),
+      'woodPoints': serializer.toJson<int>(woodPoints),
+      'branch': serializer.toJson<String?>(
+        $PetsTable.$converterbranchn.toJson(branch),
+      ),
+      'evolvedAt': serializer.toJson<DateTime?>(evolvedAt),
     };
   }
 
-  Pet copyWith({int? id, String? name, DateTime? createdAt}) => Pet(
+  Pet copyWith({
+    int? id,
+    String? name,
+    DateTime? createdAt,
+    int? exp,
+    int? firePoints,
+    int? waterPoints,
+    int? woodPoints,
+    Value<TaskElement?> branch = const Value.absent(),
+    Value<DateTime?> evolvedAt = const Value.absent(),
+  }) => Pet(
     id: id ?? this.id,
     name: name ?? this.name,
     createdAt: createdAt ?? this.createdAt,
+    exp: exp ?? this.exp,
+    firePoints: firePoints ?? this.firePoints,
+    waterPoints: waterPoints ?? this.waterPoints,
+    woodPoints: woodPoints ?? this.woodPoints,
+    branch: branch.present ? branch.value : this.branch,
+    evolvedAt: evolvedAt.present ? evolvedAt.value : this.evolvedAt,
   );
   Pet copyWithCompanion(PetsCompanion data) {
     return Pet(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      exp: data.exp.present ? data.exp.value : this.exp,
+      firePoints: data.firePoints.present
+          ? data.firePoints.value
+          : this.firePoints,
+      waterPoints: data.waterPoints.present
+          ? data.waterPoints.value
+          : this.waterPoints,
+      woodPoints: data.woodPoints.present
+          ? data.woodPoints.value
+          : this.woodPoints,
+      branch: data.branch.present ? data.branch.value : this.branch,
+      evolvedAt: data.evolvedAt.present ? data.evolvedAt.value : this.evolvedAt,
     );
   }
 
@@ -2261,46 +2489,98 @@ class Pet extends DataClass implements Insertable<Pet> {
     return (StringBuffer('Pet(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('exp: $exp, ')
+          ..write('firePoints: $firePoints, ')
+          ..write('waterPoints: $waterPoints, ')
+          ..write('woodPoints: $woodPoints, ')
+          ..write('branch: $branch, ')
+          ..write('evolvedAt: $evolvedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    createdAt,
+    exp,
+    firePoints,
+    waterPoints,
+    woodPoints,
+    branch,
+    evolvedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Pet &&
           other.id == this.id &&
           other.name == this.name &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.exp == this.exp &&
+          other.firePoints == this.firePoints &&
+          other.waterPoints == this.waterPoints &&
+          other.woodPoints == this.woodPoints &&
+          other.branch == this.branch &&
+          other.evolvedAt == this.evolvedAt);
 }
 
 class PetsCompanion extends UpdateCompanion<Pet> {
   final Value<int> id;
   final Value<String> name;
   final Value<DateTime> createdAt;
+  final Value<int> exp;
+  final Value<int> firePoints;
+  final Value<int> waterPoints;
+  final Value<int> woodPoints;
+  final Value<TaskElement?> branch;
+  final Value<DateTime?> evolvedAt;
   const PetsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.exp = const Value.absent(),
+    this.firePoints = const Value.absent(),
+    this.waterPoints = const Value.absent(),
+    this.woodPoints = const Value.absent(),
+    this.branch = const Value.absent(),
+    this.evolvedAt = const Value.absent(),
   });
   PetsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required DateTime createdAt,
+    this.exp = const Value.absent(),
+    this.firePoints = const Value.absent(),
+    this.waterPoints = const Value.absent(),
+    this.woodPoints = const Value.absent(),
+    this.branch = const Value.absent(),
+    this.evolvedAt = const Value.absent(),
   }) : name = Value(name),
        createdAt = Value(createdAt);
   static Insertable<Pet> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<DateTime>? createdAt,
+    Expression<int>? exp,
+    Expression<int>? firePoints,
+    Expression<int>? waterPoints,
+    Expression<int>? woodPoints,
+    Expression<String>? branch,
+    Expression<DateTime>? evolvedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (createdAt != null) 'created_at': createdAt,
+      if (exp != null) 'exp': exp,
+      if (firePoints != null) 'fire_points': firePoints,
+      if (waterPoints != null) 'water_points': waterPoints,
+      if (woodPoints != null) 'wood_points': woodPoints,
+      if (branch != null) 'branch': branch,
+      if (evolvedAt != null) 'evolved_at': evolvedAt,
     });
   }
 
@@ -2308,11 +2588,23 @@ class PetsCompanion extends UpdateCompanion<Pet> {
     Value<int>? id,
     Value<String>? name,
     Value<DateTime>? createdAt,
+    Value<int>? exp,
+    Value<int>? firePoints,
+    Value<int>? waterPoints,
+    Value<int>? woodPoints,
+    Value<TaskElement?>? branch,
+    Value<DateTime?>? evolvedAt,
   }) {
     return PetsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       createdAt: createdAt ?? this.createdAt,
+      exp: exp ?? this.exp,
+      firePoints: firePoints ?? this.firePoints,
+      waterPoints: waterPoints ?? this.waterPoints,
+      woodPoints: woodPoints ?? this.woodPoints,
+      branch: branch ?? this.branch,
+      evolvedAt: evolvedAt ?? this.evolvedAt,
     );
   }
 
@@ -2328,6 +2620,26 @@ class PetsCompanion extends UpdateCompanion<Pet> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (exp.present) {
+      map['exp'] = Variable<int>(exp.value);
+    }
+    if (firePoints.present) {
+      map['fire_points'] = Variable<int>(firePoints.value);
+    }
+    if (waterPoints.present) {
+      map['water_points'] = Variable<int>(waterPoints.value);
+    }
+    if (woodPoints.present) {
+      map['wood_points'] = Variable<int>(woodPoints.value);
+    }
+    if (branch.present) {
+      map['branch'] = Variable<String>(
+        $PetsTable.$converterbranchn.toSql(branch.value),
+      );
+    }
+    if (evolvedAt.present) {
+      map['evolved_at'] = Variable<DateTime>(evolvedAt.value);
+    }
     return map;
   }
 
@@ -2336,7 +2648,13 @@ class PetsCompanion extends UpdateCompanion<Pet> {
     return (StringBuffer('PetsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('exp: $exp, ')
+          ..write('firePoints: $firePoints, ')
+          ..write('waterPoints: $waterPoints, ')
+          ..write('woodPoints: $woodPoints, ')
+          ..write('branch: $branch, ')
+          ..write('evolvedAt: $evolvedAt')
           ..write(')'))
         .toString();
   }
@@ -3569,11 +3887,23 @@ typedef $$PetsTableCreateCompanionBuilder = PetsCompanion Function({
   Value<int> id,
   required String name,
   required DateTime createdAt,
+  Value<int> exp,
+  Value<int> firePoints,
+  Value<int> waterPoints,
+  Value<int> woodPoints,
+  Value<TaskElement?> branch,
+  Value<DateTime?> evolvedAt,
 });
 typedef $$PetsTableUpdateCompanionBuilder = PetsCompanion Function({
   Value<int> id,
   Value<String> name,
   Value<DateTime> createdAt,
+  Value<int> exp,
+  Value<int> firePoints,
+  Value<int> waterPoints,
+  Value<int> woodPoints,
+  Value<TaskElement?> branch,
+  Value<DateTime?> evolvedAt,
 });
 
 class $$PetsTableFilterComposer extends Composer<_$AppDatabase, $PetsTable> {
@@ -3596,6 +3926,37 @@ class $$PetsTableFilterComposer extends Composer<_$AppDatabase, $PetsTable> {
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get exp => $composableBuilder(
+    column: $table.exp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get firePoints => $composableBuilder(
+    column: $table.firePoints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get waterPoints => $composableBuilder(
+    column: $table.waterPoints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get woodPoints => $composableBuilder(
+    column: $table.woodPoints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TaskElement?, TaskElement, String>
+  get branch => $composableBuilder(
+    column: $table.branch,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get evolvedAt => $composableBuilder(
+    column: $table.evolvedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3622,6 +3983,36 @@ class $$PetsTableOrderingComposer extends Composer<_$AppDatabase, $PetsTable> {
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get exp => $composableBuilder(
+    column: $table.exp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get firePoints => $composableBuilder(
+    column: $table.firePoints,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get waterPoints => $composableBuilder(
+    column: $table.waterPoints,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get woodPoints => $composableBuilder(
+    column: $table.woodPoints,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branch => $composableBuilder(
+    column: $table.branch,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get evolvedAt => $composableBuilder(
+    column: $table.evolvedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PetsTableAnnotationComposer
@@ -3641,6 +4032,30 @@ class $$PetsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get exp =>
+      $composableBuilder(column: $table.exp, builder: (column) => column);
+
+  GeneratedColumn<int> get firePoints => $composableBuilder(
+    column: $table.firePoints,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get waterPoints => $composableBuilder(
+    column: $table.waterPoints,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get woodPoints => $composableBuilder(
+    column: $table.woodPoints,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<TaskElement?, String> get branch =>
+      $composableBuilder(column: $table.branch, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get evolvedAt =>
+      $composableBuilder(column: $table.evolvedAt, builder: (column) => column);
 }
 
 class $$PetsTableTableManager
@@ -3669,16 +4084,50 @@ class $$PetsTableTableManager
               $$PetsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$PetsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-          }) => PetsCompanion(id: id, name: name, createdAt: createdAt),
-          createCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            required String name,
-            required DateTime createdAt,
-          }) => PetsCompanion.insert(id: id, name: name, createdAt: createdAt),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> exp = const Value.absent(),
+                Value<int> firePoints = const Value.absent(),
+                Value<int> waterPoints = const Value.absent(),
+                Value<int> woodPoints = const Value.absent(),
+                Value<TaskElement?> branch = const Value.absent(),
+                Value<DateTime?> evolvedAt = const Value.absent(),
+              }) => PetsCompanion(
+                id: id,
+                name: name,
+                createdAt: createdAt,
+                exp: exp,
+                firePoints: firePoints,
+                waterPoints: waterPoints,
+                woodPoints: woodPoints,
+                branch: branch,
+                evolvedAt: evolvedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required DateTime createdAt,
+                Value<int> exp = const Value.absent(),
+                Value<int> firePoints = const Value.absent(),
+                Value<int> waterPoints = const Value.absent(),
+                Value<int> woodPoints = const Value.absent(),
+                Value<TaskElement?> branch = const Value.absent(),
+                Value<DateTime?> evolvedAt = const Value.absent(),
+              }) => PetsCompanion.insert(
+                id: id,
+                name: name,
+                createdAt: createdAt,
+                exp: exp,
+                firePoints: firePoints,
+                waterPoints: waterPoints,
+                woodPoints: woodPoints,
+                branch: branch,
+                evolvedAt: evolvedAt,
+              ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (

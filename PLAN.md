@@ -41,10 +41,10 @@ Tên tạm: **Linh Thú Kỷ Luật** (đổi sau)
 **Vòng đời linh thú (MVP: 1 loài)**
 1. Ký khế ước: chọn trứng, đặt tên, tạo 3 thói quen đầu tiên.
 2. Trứng → **Ấu thú** ngay khi có việc tốt đầu tiên sau khi ký khế ước (chờ lâu thì người mới dễ bỏ app).
-3. Ấu thú → **Trưởng thành**: một trong 3 nhánh (Hỏa / Thủy / Mộc) theo điểm hệ cao nhất, cần cấp ≥ X **và** streak ≥ 7 ngày.
+3. Ấu thú → **Trưởng thành**: một trong 3 nhánh (Hỏa / Thủy / Mộc) theo điểm hệ cao nhất, cần cấp ≥ 5 **và** chuỗi ≥ 7 ngày liên tiếp có việc tốt. Người dùng bấm "Tiến hóa" để chốt nhánh.
 4. Sau này: Linh Thú → Yêu Thú → Thánh Thú → Thần Thú (mốc streak 30 / 100 / 365).
 
-**Chỉ số pet:** cấp, EXP, điểm từng hệ, **tâm trạng** (vui / bình thường / buồn / mệt; ảnh hưởng animation và câu thoại), độ no.
+**Chỉ số pet:** cấp, EXP, điểm từng hệ, **tâm trạng** (vui / bình thường / buồn / mệt; ảnh hưởng animation và câu thoại), độ no (chưa làm).
 
 **Lý do mở app mỗi ngày:** cho ăn, xoa đầu pet, quà nhỏ ngẫu nhiên, câu thoại theo tâm trạng, sau này thêm linh điền.
 
@@ -84,7 +84,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 **Giai đoạn 2: Linh thú**
 - [x] Màn hình khế ước (đặt tên, nhận trứng), trứng nở từ việc tốt đầu tiên, màn hình nhà của pet với hình tạm (bước 2.1). Chưa có bước chọn trứng vì MVP chỉ có 1 loài
 - [x] Linh vật rơi khi làm việc tốt (theo hệ, Dễ 50% / Vừa 75% / Khó 100%, 10% ra bản "ngàn năm"), bạo kích rơi 2 món, tối đa 5 món mỗi ngày, túi linh vật trong tab Linh thú; hoàn tác lấy lại đúng món (bước 2.2). Xu, bạo kích và phần thưởng tự đặt đã có từ bước 1.2
-- [ ] Hấp thụ linh vật → EXP và điểm hệ; tâm trạng; tiến hóa theo nhánh
+- [x] Hấp thụ linh vật → EXP và điểm hệ (thường +10 EXP +1 điểm, ngàn năm +30 EXP +3 điểm; cấp 2/3/4/5 ở 20/60/120/200 EXP); tâm trạng tính từ việc tốt, việc xấu và bế quan; tiến hóa theo nhánh. Bỏ tick sau khi đã hấp thụ thì trừ lại EXP của món đó (bước 2.3)
 - ✅ Kiểm tra: 3–5 người bạn dùng thử 2 tuần, xem họ có mở app đều không
 
 **Giai đoạn 3: Linh điền + widget**

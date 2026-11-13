@@ -5,6 +5,7 @@ import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:linh_thu_ky_luat/data/profile_repository.dart';
 import 'package:linh_thu_ky_luat/data/score_service.dart';
 import 'package:linh_thu_ky_luat/domain/drops.dart';
+import 'package:linh_thu_ky_luat/domain/growth.dart';
 
 import '../helpers.dart';
 
@@ -249,6 +250,57 @@ void main() {
       final log = await service.score(id, up: false);
       expect(log.dropItem, isNull);
       expect(await bag(), isEmpty);
+    });
+  });
+
+  group('hấp thụ linh vật', () {
+    Future<Pet> pet() => db.select(db.pets).getSingle();
+    Future<Map<SpiritItem, int>> bag() => service.watchInventory().first;
+
+    setUp(() async {
+      await db.into(db.pets).insert(
+          PetsCompanion.insert(name: 'Mochi', createdAt: DateTime(2026, 11)));
+      // Không bạo kích, rơi đồ, món quý.
+      service = ScoreService(db,
+          random: SequenceRandom([0.5, 0.1, 0.05]), clock: () => now);
+    });
+
+    test('hấp thụ: bớt một món, +EXP và +điểm đúng hệ', () async {
+      await service.score(await addTask(TaskType.todo));
+      expect(await bag(), {SpiritItem.fireRare: 1});
+
+      final after = await service.absorb(SpiritItem.fireRare);
+      expect(after.exp, Growth.rareExp);
+      expect(after.firePoints, Growth.rarePoints);
+      expect(after.waterPoints, 0);
+      expect(await bag(), isEmpty);
+      await expectLater(
+          service.absorb(SpiritItem.fireRare), throwsStateError);
+    });
+
+    test('bỏ tick sau khi đã hấp thụ thì trừ lại đúng EXP và điểm', () async {
+      final id = await addTask(TaskType.daily);
+      await service.score(id);
+      await service.absorb(SpiritItem.fireRare);
+
+      await service.uncheck(id);
+      final p = await pet();
+      expect(p.exp, 0);
+      expect(p.firePoints, 0);
+      expect(await bag(), isEmpty);
+
+      // Tick lại: rơi món mới, nhưng tổng không hơn một lần tick.
+      await service.score(id);
+      await service.absorb(SpiritItem.fireRare);
+      expect((await pet()).exp, Growth.rareExp);
+    });
+
+    test('chưa có linh thú thì không hấp thụ được', () async {
+      await db.delete(db.pets).go();
+      await service.score(await addTask(TaskType.todo));
+      await expectLater(
+          service.absorb(SpiritItem.fireRare), throwsStateError);
+      expect(await bag(), {SpiritItem.fireRare: 1});
     });
   });
 }

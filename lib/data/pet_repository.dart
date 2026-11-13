@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../domain/growth.dart';
 import 'database.dart';
 
 /// Linh thú của người dùng. Bản đầu chỉ có một con.
@@ -26,7 +27,28 @@ class PetRepository {
             ));
       });
 
+  /// Tiến hóa thành Trưởng thành theo [branch]. Nhánh được chốt, không đổi
+  /// lại được; gọi lần nữa thì không làm gì.
+  Future<void> evolve(int id, TaskElement branch) =>
+      (_db.update(_db.pets)..where((p) => p.id.equals(id) & p.branch.isNull()))
+          .write(PetsCompanion(
+        branch: Value(branch),
+        evolvedAt: Value(_clock()),
+      ));
+
   Future<void> rename(int id, String name) =>
       (_db.update(_db.pets)..where((p) => p.id.equals(id)))
           .write(PetsCompanion(name: Value(name.trim())));
+}
+
+/// Cấp và điểm hệ của linh thú. EXP và điểm do ScoreService ghi (hấp thụ
+/// và hoàn tác).
+extension PetGrowth on Pet {
+  int get level => Growth.levelFor(exp);
+
+  Map<TaskElement, int> get points => {
+        TaskElement.fire: firePoints,
+        TaskElement.water: waterPoints,
+        TaskElement.wood: woodPoints,
+      };
 }

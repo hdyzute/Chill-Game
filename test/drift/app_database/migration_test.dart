@@ -15,6 +15,7 @@ import 'generated/schema_v5.dart' as v5;
 import 'generated/schema_v6.dart' as v6;
 import 'generated/schema_v7.dart' as v7;
 import 'generated/schema_v8.dart' as v8;
+import 'generated/schema_v9.dart' as v9;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -394,6 +395,34 @@ void main() {
         expect(await newDb.select(newDb.inventoryItems).get(), isEmpty);
         expect((await newDb.select(newDb.pets).getSingle()).name, 'Abcdef');
         expect((await newDb.select(newDb.profiles).getSingle()).coins, 60);
+      },
+    );
+  });
+
+  // Bản 9 thêm cấp và điểm hệ cho linh thú: linh thú cũ bắt đầu từ 0, chưa
+  // tiến hóa, túi đồ giữ nguyên.
+  test('nâng cấp v8 lên v9: linh thú cũ có 0 EXP, chưa tiến hóa', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 8,
+      newVersion: 9,
+      createOld: v8.DatabaseAtV8.new,
+      createNew: v9.DatabaseAtV9.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.pets,
+            const v8.PetsData(id: 1, name: 'Abcdef', createdAt: 1793700000));
+        batch.insert(oldDb.inventoryItems,
+            const v8.InventoryItemsData(item: 'fireCommon', count: 3));
+      },
+      validateItems: (newDb) async {
+        final pet = await newDb.select(newDb.pets).getSingle();
+        expect(pet.name, 'Abcdef');
+        expect(pet.exp, 0);
+        expect([pet.firePoints, pet.waterPoints, pet.woodPoints], [0, 0, 0]);
+        expect(pet.branch, isNull);
+        expect(pet.evolvedAt, isNull);
+        expect((await newDb.select(newDb.inventoryItems).getSingle()).count,
+            3);
       },
     );
   });

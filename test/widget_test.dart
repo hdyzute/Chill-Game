@@ -383,7 +383,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.pets_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ấu thú · Bên nhau 1 ngày'), findsOneWidget);
+    expect(find.text('Ấu thú · Cấp 1 · Bên nhau 1 ngày'), findsOneWidget);
     expect(find.byKey(const Key('hatch-progress')), findsNothing);
     expect(find.text('Mochi vui vẻ quấn quýt bên bạn.'), findsOneWidget);
     expect(await db.select(db.pets).get(), hasLength(1));
@@ -406,7 +406,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.pets_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ấu thú · Bên nhau 4 ngày'), findsOneWidget);
+    expect(find.text('Ấu thú · Cấp 1 · Bên nhau 4 ngày'), findsOneWidget);
     expect(find.textContaining('31/10'), findsOneWidget);
     expect(find.byKey(const Key('hatch-progress')), findsNothing);
     expect(find.textContaining('đang chờ việc tốt'), findsOneWidget);
@@ -447,6 +447,121 @@ void main() {
     expect(find.text('Hỏa Linh Quả'), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('item-fireCommon'))).data,
         '×1');
+
+    await tearDownApp(tester);
+  });
+
+  // Màn hình điện thoại thật (dọc) để các thẻ dưới cùng của tab Linh thú
+  // nằm gọn trong khung khi cuộn tới.
+  void phoneView(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+  }
+
+  Future<void> addDeed(DateTime at) => db.into(db.taskLogs).insert(
+      TaskLogsCompanion.insert(
+          taskId: 1, kind: LogKind.complete, createdAt: Value(at)));
+
+  Future<void> openPetTab(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.pets_outlined));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('hấp thụ linh vật trong túi: +EXP, lên cấp', (tester) async {
+    phoneView(tester);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi', createdAt: DateTime(2026, 11, 3, 8)));
+    await addDeed(DateTime(2026, 11, 3, 9));
+    await db.into(db.inventoryItems).insert(InventoryItemsCompanion.insert(
+        item: SpiritItem.fireCommon, count: const Value(2)));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    expect(find.text('Tâm trạng: Vui'), findsOneWidget);
+    final absorb = find.byKey(const Key('absorb-fireCommon'));
+    await tester.scrollUntilVisible(absorb, 200,
+        scrollable: find.byType(Scrollable).last);
+    await tester.tap(absorb);
+    await tester.pumpAndSettle();
+    expect(find.text('Mochi hấp thụ Hỏa Linh Quả: +10 EXP, +1 Hỏa'),
+        findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('item-fireCommon'))).data,
+        '×1');
+
+    await tester.tap(absorb);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Lên cấp 2!'), findsOneWidget);
+    expect(find.byKey(const Key('item-fireCommon')), findsNothing);
+    await tester.scrollUntilVisible(find.byKey(const Key('pet-summary')), -200,
+        scrollable: find.byType(Scrollable).last);
+    expect(find.text('Ấu thú · Cấp 2 · Bên nhau 1 ngày'), findsOneWidget);
+    final pet = await db.select(db.pets).getSingle();
+    expect([pet.exp, pet.firePoints], [20, 2]);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('đủ cấp 5 và chuỗi 7 ngày thì tiến hóa theo hệ cao nhất',
+      (tester) async {
+    phoneView(tester);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+          name: 'Mochi',
+          createdAt: DateTime(2026, 10, 26, 8),
+          exp: const Value(200),
+          firePoints: const Value(4),
+          waterPoints: const Value(6),
+        ));
+    // 7 ngày liền tới hôm qua; hôm nay (3/11) chưa làm gì.
+    for (var d = 0; d < 7; d++) {
+      await addDeed(DateTime(2026, 10, 27 + d, 9));
+    }
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    expect(find.text('Tâm trạng: Bình thường'), findsOneWidget);
+    final evolve = find.widgetWithText(FilledButton, 'Tiến hóa');
+    await tester.scrollUntilVisible(evolve, 200,
+        scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(evolve);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Hướng tiến hóa: hệ Thủy'), findsOneWidget);
+    await tester.tap(evolve);
+    await tester.pumpAndSettle();
+    expect(find.text('Tiến hóa theo hệ Thủy?'), findsOneWidget);
+    await tester.tap(find.text('Đồng ý'));
+    await tester.pumpAndSettle();
+
+    final pet = await db.select(db.pets).getSingle();
+    expect(pet.branch, TaskElement.water);
+    expect(pet.evolvedAt, isNotNull);
+    await tester.scrollUntilVisible(find.byKey(const Key('pet-summary')), -200,
+        scrollable: find.byType(Scrollable).last);
+    expect(find.text('Trưởng thành hệ Thủy · Cấp 5 · Bên nhau 9 ngày'),
+        findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Tiến hóa'), findsNothing);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('chưa đủ chuỗi ngày thì nút tiến hóa bị khóa', (tester) async {
+    phoneView(tester);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi',
+        createdAt: DateTime(2026, 11, 1, 8),
+        exp: const Value(250),
+        woodPoints: const Value(3)));
+    await addDeed(DateTime(2026, 11, 2, 9));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    final evolve = find.widgetWithText(FilledButton, 'Tiến hóa');
+    await tester.scrollUntilVisible(evolve, 200,
+        scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(evolve);
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(evolve).onPressed, isNull);
+    expect(find.textContaining('đang 1 ngày'), findsOneWidget);
 
     await tearDownApp(tester);
   });

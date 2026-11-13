@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/day.dart';
 import '../domain/drops.dart';
+import '../domain/growth.dart';
 import '../domain/scoring.dart';
 import 'database.dart';
 
@@ -60,6 +61,32 @@ class ScoreService {
   Stream<int> watchDropsSince(DateTime since) => _dropsSinceQuery(since)
       .watchSingle()
       .map((row) => row.read(_dropSum) ?? 0);
+
+  /// Số lần làm thói quen xấu kể từ [since] (mốc đầu ngày logic).
+  Stream<int> watchBadSince(DateTime since) {
+    final count = _db.taskLogs.id.count();
+    final query = _db.selectOnly(_db.taskLogs)
+      ..addColumns([count])
+      ..where(_db.taskLogs.kind.equalsValue(LogKind.bad) &
+          _db.taskLogs.createdAt.isBiggerOrEqualValue(since));
+    return query.watchSingle().map((row) => row.read(count)!);
+  }
+
+  /// Linh thú hấp thụ một [item] trong túi: +EXP và +điểm hệ. Ném
+  /// [StateError] khi túi hết món đó hoặc chưa có linh thú. Trả về linh thú
+  /// sau khi hấp thụ.
+  Future<Pet> absorb(SpiritItem item) {
+    return _db.transaction(() async {
+      if (await _itemCount(item) <= 0) {
+        throw StateError('Túi không còn ${item.label}');
+      }
+      final pet = await _pet();
+      if (pet == null) throw StateError('Chưa có linh thú');
+      await _addItem(item, -1);
+      await _growPet(pet, item, 1);
+      return (await _pet())!;
+    });
+  }
 
   /// Làm xong task ([up]), hoặc làm thói quen xấu (`up: false`).
   Future<TaskLog> score(int taskId, {bool up = true}) {
@@ -166,9 +193,18 @@ class ScoreService {
       // Lỡ tiêu xu rồi mới hoàn tác thì không để ví âm.
       final coins = await _coins();
       await _setCoins(max(0, coins - log.coinsDelta));
-      // Linh vật cũng vậy: đã dùng mất thì chỉ lấy lại phần còn trong túi.
-      if (log.dropItem != null && log.dropCount > 0) {
-        await _addItem(log.dropItem!, -log.dropCount);
+      // Linh vật: lấy lại từ túi; món đã cho linh thú hấp thụ thì trừ lại
+      // đúng EXP và điểm hệ của nó, để không cày được bằng cách tick, hấp
+      // thụ, bỏ tick rồi tick lại.
+      final item = log.dropItem;
+      if (item != null && log.dropCount > 0) {
+        final taken = min(await _itemCount(item), log.dropCount);
+        await _addItem(item, -taken);
+        final absorbed = log.dropCount - taken;
+        final pet = await _pet();
+        if (absorbed > 0 && pet != null) {
+          await _growPet(pet, item, -absorbed);
+        }
       }
       await (_db.delete(_db.taskLogs)..where((l) => l.id.equals(logId))).go();
     });
@@ -206,6 +242,31 @@ class ScoreService {
   Future<void> _addCoins(int delta) async {
     if (delta == 0) return;
     await _setCoins(await _coins() + delta);
+  }
+
+  Future<Pet?> _pet() => (_db.select(_db.pets)
+        ..orderBy([(p) => OrderingTerm(expression: p.id)])
+        ..limit(1))
+      .getSingleOrNull();
+
+  /// Cộng (hoặc trừ khi [times] âm, không xuống dưới 0) EXP và điểm hệ của
+  /// [times] món [item].
+  Future<void> _growPet(Pet pet, SpiritItem item, int times) {
+    int add(int current, int each) => max(0, current + each * times);
+    final points = Growth.pointsOf(item);
+    return (_db.update(_db.pets)..where((p) => p.id.equals(pet.id)))
+        .write(PetsCompanion(
+      exp: Value(add(pet.exp, Growth.expOf(item))),
+      firePoints: item.element == TaskElement.fire
+          ? Value(add(pet.firePoints, points))
+          : const Value.absent(),
+      waterPoints: item.element == TaskElement.water
+          ? Value(add(pet.waterPoints, points))
+          : const Value.absent(),
+      woodPoints: item.element == TaskElement.wood
+          ? Value(add(pet.woodPoints, points))
+          : const Value.absent(),
+    ));
   }
 
   Future<int> _itemCount(SpiritItem item) async =>

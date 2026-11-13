@@ -97,6 +97,18 @@ class Pets extends Table {
 
   /// Lúc ký khế ước. Trứng chỉ tính việc tốt từ ngày (logic) này.
   DateTimeColumn get createdAt => dateTime()();
+
+  /// Tổng EXP từ linh vật đã hấp thụ; cấp tính từ đây (xem growth.dart).
+  IntColumn get exp => integer().withDefault(const Constant(0))();
+
+  /// Điểm từng hệ, quyết định nhánh khi tiến hóa.
+  IntColumn get firePoints => integer().withDefault(const Constant(0))();
+  IntColumn get waterPoints => integer().withDefault(const Constant(0))();
+  IntColumn get woodPoints => integer().withDefault(const Constant(0))();
+
+  /// Nhánh đã tiến hóa (Trưởng thành). Null khi chưa tiến hóa.
+  TextColumn get branch => textEnum<TaskElement>().nullable()();
+  DateTimeColumn get evolvedAt => dateTime().nullable()();
 }
 
 /// Túi linh vật: số lượng từng loại. Chỉ ScoreService ghi vào (rơi đồ và
@@ -115,7 +127,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -157,6 +169,14 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(schema.taskLogs, schema.taskLogs.dropItem);
             await m.addColumn(schema.taskLogs, schema.taskLogs.dropCount);
             await m.createTable(schema.inventoryItems);
+          },
+          from8To9: (m, schema) async {
+            await m.addColumn(schema.pets, schema.pets.exp);
+            await m.addColumn(schema.pets, schema.pets.firePoints);
+            await m.addColumn(schema.pets, schema.pets.waterPoints);
+            await m.addColumn(schema.pets, schema.pets.woodPoints);
+            await m.addColumn(schema.pets, schema.pets.branch);
+            await m.addColumn(schema.pets, schema.pets.evolvedAt);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

@@ -5,36 +5,36 @@ import '../../domain/pet.dart';
 import '../tasks/task_style.dart';
 
 /// Hình linh thú. Hiện là hình tạm bằng icon; khi có hình vẽ thật (PLAN.md
-/// mục 6) chỉ cần thay ở đây.
+/// mục 6) chỉ cần thay ở đây. Trưởng thành mang màu và biểu tượng của nhánh.
 class PetArt extends StatelessWidget {
-  const PetArt({super.key, required this.stage, this.size = 180});
+  const PetArt({super.key, required this.stage, this.branch, this.size = 180});
 
   final PetStage stage;
+  final TaskElement? branch;
   final double size;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final (icon, color) = switch ((stage, branch)) {
+      (PetStage.egg, _) => (Icons.egg, scheme.tertiary),
+      (PetStage.adult, final TaskElement b) => (b.icon, b.color),
+      _ => (Icons.pets, scheme.primary),
+    };
     return Semantics(
-      label: stage.label,
+      label: stage == PetStage.adult && branch != null
+          ? '${stage.label} hệ ${branch!.label}'
+          : stage.label,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: scheme.primaryContainer.withValues(alpha: 0.6),
+          color: stage == PetStage.adult
+              ? color.withValues(alpha: 0.18)
+              : scheme.primaryContainer.withValues(alpha: 0.6),
         ),
-        child: Icon(
-          switch (stage) {
-            PetStage.egg => Icons.egg,
-            PetStage.baby => Icons.pets,
-          },
-          size: size * 0.55,
-          color: switch (stage) {
-            PetStage.egg => scheme.tertiary,
-            PetStage.baby => scheme.primary,
-          },
-        ),
+        child: Icon(icon, size: size * 0.55, color: color),
       ),
     );
   }

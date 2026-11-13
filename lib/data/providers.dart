@@ -129,20 +129,43 @@ final petRepositoryProvider = Provider((ref) => PetRepository(
 final petProvider =
     StreamProvider<Pet?>((ref) => ref.watch(petRepositoryProvider).watch());
 
-/// Giai đoạn và tiến độ ấp của linh thú. Null khi chưa có linh thú hoặc dữ
-/// liệu chưa tải xong.
+/// Số lần làm thói quen xấu hôm nay, cho tâm trạng linh thú.
+final todayBadCountProvider = StreamProvider<int>((ref) {
+  final today = ref.watch(todayProvider);
+  final hour = ref.watch(dayStartHourProvider);
+  if (today == null || hour == null) return const Stream.empty();
+  return ref
+      .watch(scoreServiceProvider)
+      .watchBadSince(dayStartInstant(today, hour));
+});
+
+/// Giai đoạn, tiến độ ấp và tâm trạng của linh thú. Null khi chưa có linh
+/// thú hoặc dữ liệu chưa tải xong.
 final petStatusProvider = Provider<PetStatus?>((ref) {
   final pet = ref.watch(petProvider).value;
   final days = ref.watch(_deedDaysProvider);
   final hour = ref.watch(dayStartHourProvider);
   final today = ref.watch(todayProvider);
-  if (pet == null || days == null || hour == null || today == null) {
+  final counts = ref.watch(todayCountsProvider).value;
+  final bad = ref.watch(todayBadCountProvider).value;
+  final resting = ref.watch(profileProvider).value?.resting;
+  if (pet == null ||
+      days == null ||
+      hour == null ||
+      today == null ||
+      counts == null ||
+      bad == null ||
+      resting == null) {
     return null;
   }
   return petStatus(
     contractDay: logicalDate(pet.createdAt, hour),
     deedDays: days,
     today: today,
+    branch: pet.branch,
+    goodToday: counts.values.fold(0, (a, b) => a + b),
+    badToday: bad,
+    resting: resting,
   );
 });
 
