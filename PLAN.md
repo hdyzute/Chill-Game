@@ -112,7 +112,9 @@ Asset tối thiểu cho MVP:
 - 3 dạng trưởng thành × 4 tâm trạng
 - Khoảng 6 icon linh vật, icon xu, nền nhà pet
 
-Nguồn: AI tạo ảnh rồi chỉnh tay (giữ **một phong cách chibi thống nhất**), asset pack trên itch.io (kiểm tra giấy phép thương mại), hoặc thuê vẽ khi có tiền. Sprite rồng trong repo cũ chỉ dùng lại được nếu rõ nguồn và giấy phép.
+**Đã có bản vẽ bằng code** (vector, chibi, cùng phong cách icon app), ở `lib/features/pet/pet_painter.dart`: trứng (lắc lư), ấu thú đội mảnh vỏ trứng × 4 tâm trạng, 3 dạng trưởng thành (Hỏa: mào lửa, tai nhọn, đuôi lửa; Thủy: giọt nước trên đầu, tai vây, đuôi cá; Mộc: mầm lá, tai lá, đuôi lá) × 4 tâm trạng, 6 linh vật (bản ngàn năm có viền vàng). Linh thú nhún và chớp mắt. Xem nhanh mọi hình: `flutter test tool/pet_gallery_test.dart --dart-define=OUT=<file .png>`. Chưa có: hình boss (đang là icon hệ), nền nhà pet, trứng nhiều trạng thái nứt (trứng nở sau 1 ngày nên chưa cần).
+
+Muốn đẹp hơn sau này: Nguồn: AI tạo ảnh rồi chỉnh tay (giữ **một phong cách chibi thống nhất**), asset pack trên itch.io (kiểm tra giấy phép thương mại), hoặc thuê vẽ khi có tiền. Sprite rồng trong repo cũ chỉ dùng lại được nếu rõ nguồn và giấy phép.
 
 ## 7. Rủi ro
 

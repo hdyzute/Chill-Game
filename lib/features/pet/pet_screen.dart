@@ -123,7 +123,10 @@ class _PetHome extends ConsumerWidget {
     return ListView(
       padding: _listPadding(context),
       children: [
-        Center(child: PetArt(stage: status.stage, branch: pet.branch)),
+        Center(
+          child: PetArt(
+              stage: status.stage, branch: pet.branch, mood: status.mood),
+        ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

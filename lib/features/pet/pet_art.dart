@@ -1,65 +1,119 @@
+import 'dart:io';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../data/task_enums.dart';
 import '../../domain/pet.dart';
 import '../tasks/task_style.dart';
+import 'pet_painter.dart';
 
-/// Hình linh thú. Hiện là hình tạm bằng icon; khi có hình vẽ thật (PLAN.md
-/// mục 6) chỉ cần thay ở đây. Trưởng thành mang màu và biểu tượng của nhánh.
-class PetArt extends StatelessWidget {
-  const PetArt({super.key, required this.stage, this.branch, this.size = 180});
+/// Tắt chuyển động khi chạy `flutter test`: hoạt ảnh lặp mãi làm
+/// `pumpAndSettle` không bao giờ dừng.
+final bool _animate = !Platform.environment.containsKey('FLUTTER_TEST');
+
+/// Hình linh thú (vẽ ở pet_painter.dart): nhún nhẹ và chớp mắt, trứng lắc
+/// lư. Trưởng thành mang màu và đặc điểm của nhánh; nét mặt theo [mood].
+class PetArt extends StatefulWidget {
+  const PetArt({
+    super.key,
+    required this.stage,
+    this.branch,
+    this.mood = PetMood.calm,
+    this.size = 180,
+  });
 
   final PetStage stage;
   final TaskElement? branch;
+  final PetMood mood;
   final double size;
+
+  @override
+  State<PetArt> createState() => _PetArtState();
+}
+
+class _PetArtState extends State<PetArt> with SingleTickerProviderStateMixin {
+  AnimationController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_animate) {
+      _controller = AnimationController(
+          vsync: this, duration: const Duration(seconds: 4))
+        ..repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final (icon, color) = switch ((stage, branch)) {
-      (PetStage.egg, _) => (Icons.egg, scheme.tertiary),
-      (PetStage.adult, final TaskElement b) => (b.icon, b.color),
-      _ => (Icons.pets, scheme.primary),
-    };
+    final branch = widget.branch;
+    final background = widget.stage == PetStage.adult && branch != null
+        ? branch.color.withValues(alpha: 0.14)
+        : scheme.primaryContainer.withValues(alpha: 0.5);
+    final controller = _controller;
+    final still = controller == null || MediaQuery.disableAnimationsOf(context);
+
+    Widget paint(double bob, bool blink) => CustomPaint(
+          size: Size.square(widget.size),
+          painter: PetPainter(
+            stage: widget.stage,
+            branch: branch,
+            mood: widget.mood,
+            bob: bob,
+            blink: blink,
+          ),
+        );
+
     return Semantics(
-      label: stage == PetStage.adult && branch != null
-          ? '${stage.label} hệ ${branch!.label}'
-          : stage.label,
+      label: [
+        widget.stage == PetStage.adult && branch != null
+            ? '${widget.stage.label} hệ ${branch.label}'
+            : widget.stage.label,
+        if (widget.stage != PetStage.egg) widget.mood.label,
+      ].join(', '),
       child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: stage == PetStage.adult
-              ? color.withValues(alpha: 0.18)
-              : scheme.primaryContainer.withValues(alpha: 0.6),
-        ),
-        child: Icon(icon, size: size * 0.55, color: color),
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: background),
+        child: still
+            ? paint(0, false)
+            : AnimatedBuilder(
+                animation: controller,
+                builder: (_, _) {
+                  final v = controller.value;
+                  // Hai lần nhún mỗi vòng 4 giây, chớp mắt một lần.
+                  final bob = (1 - math.cos(v * 4 * math.pi)) / 2;
+                  return paint(bob, v > 0.9 && v < 0.94);
+                },
+              ),
       ),
     );
   }
 }
 
-/// Hình linh vật, tạm dùng icon của hệ. Bản "ngàn năm" có thêm ngôi sao.
+/// Hình linh vật. Bản "ngàn năm" có viền vàng và lấp lánh.
 class SpiritItemIcon extends StatelessWidget {
   const SpiritItemIcon(this.item, {super.key, this.size = 20});
 
   final SpiritItem item;
+
+  /// Cỡ cũ của icon; hình chiếm khung vuông cạnh 1,6 × [size].
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final color = item.element.color;
-    final icon = CircleAvatar(
-      radius: size * 0.8,
-      backgroundColor: color.withValues(alpha: 0.15),
-      child: Icon(item.element.icon, size: size, color: color),
-    );
-    if (!item.rare) return icon;
-    return Badge(
-      backgroundColor: rewardColor,
-      label: Icon(Icons.star, size: size * 0.5, color: Colors.white),
-      child: icon,
-    );
-  }
+  Widget build(BuildContext context) => Semantics(
+        label: item.label,
+        child: CustomPaint(
+          size: Size.square(size * 1.6),
+          painter: SpiritItemPainter(item),
+        ),
+      );
 }
