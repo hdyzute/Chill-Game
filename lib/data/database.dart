@@ -133,14 +133,36 @@ class Plantings extends Table {
   Set<Column> get primaryKey => {plot};
 }
 
-@DriftDatabase(
-    tables: [Tasks, TaskLogs, Profiles, Pets, InventoryItems, Plantings])
+/// Boss trong Bí cảnh. Dòng mới nhất chưa nhận thưởng là boss đang đánh.
+/// HP không lưu: tính từ nhật ký việc tốt kể từ [startedAt] (xem boss.dart).
+@DataClassName('Boss')
+class Bosses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get kind => textEnum<BossKind>()();
+
+  /// Vòng thứ mấy (1, 2...): HP và phần thưởng nhân theo.
+  IntColumn get tier => integer().withDefault(const Constant(1))();
+  DateTimeColumn get startedAt => dateTime()();
+
+  /// Lúc nhận thưởng sau khi đánh bại. Null khi boss còn đang đánh.
+  DateTimeColumn get claimedAt => dateTime().nullable()();
+}
+
+@DriftDatabase(tables: [
+  Tasks,
+  TaskLogs,
+  Profiles,
+  Pets,
+  InventoryItems,
+  Plantings,
+  Bosses,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -193,6 +215,9 @@ class AppDatabase extends _$AppDatabase {
           },
           from9To10: (m, schema) async {
             await m.createTable(schema.plantings);
+          },
+          from10To11: (m, schema) async {
+            await m.createTable(schema.bosses);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(

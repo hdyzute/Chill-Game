@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 
+import '../domain/boss.dart';
 import '../domain/day.dart';
 import '../domain/drops.dart';
 import '../domain/field.dart';
@@ -114,6 +115,55 @@ class ScoreService {
       await (_db.delete(_db.plantings)..where((p) => p.plot.equals(plot)))
           .go();
       return items;
+    });
+  }
+
+  /// Nhận thưởng boss đang đánh khi đã đánh bại nó: xu và linh vật "ngàn
+  /// năm" cùng hệ boss, rồi đánh dấu đã nhận. Ném [StateError] khi không có
+  /// boss hoặc boss chưa bị đánh bại.
+  Future<BossReward> claimBoss() {
+    return _db.transaction(() async {
+      final boss = await (_db.select(_db.bosses)
+            ..where((b) => b.claimedAt.isNull())
+            ..orderBy([(b) => OrderingTerm.desc(b.id)])
+            ..limit(1))
+          .getSingleOrNull();
+      if (boss == null) throw StateError('Không có boss nào');
+      final hour = (await (_db.select(_db.profiles)
+                ..where((p) => p.id.equals(profileId)))
+              .getSingle())
+          .dayStartHour;
+      final logs = await (_db.select(_db.taskLogs)
+            ..where((l) =>
+                l.kind.equalsValue(LogKind.complete) &
+                l.createdAt.isBiggerOrEqualValue(boss.startedAt)))
+          .get();
+      final progress = bossProgress(
+        kind: boss.kind,
+        tier: boss.tier,
+        startedAt: boss.startedAt,
+        deeds: [
+          for (final l in logs)
+            (at: l.createdAt, element: l.element, coins: l.coinsDelta),
+        ],
+        missedDays: const {},
+        today: logicalDate(_clock(), hour),
+        dayStartHour: hour,
+      );
+      if (!progress.defeated) {
+        throw StateError('${boss.kind.label} chưa bị đánh bại');
+      }
+      final reward = BossReward(
+        kind: boss.kind,
+        coins: BossStats.rewardCoins(boss.kind, boss.tier),
+        item: SpiritItem.of(boss.kind.element, rare: true),
+        itemCount: BossStats.rewardItems,
+      );
+      await _addCoins(reward.coins);
+      await _addItem(reward.item, reward.itemCount);
+      await (_db.update(_db.bosses)..where((b) => b.id.equals(boss.id)))
+          .write(BossesCompanion(claimedAt: Value(_clock())));
+      return reward;
     });
   }
 
@@ -382,4 +432,18 @@ class ScoreService {
             title: Value(task.title),
             element: Value(task.element),
           ));
+}
+
+class BossReward {
+  const BossReward({
+    required this.kind,
+    required this.coins,
+    required this.item,
+    required this.itemCount,
+  });
+
+  final BossKind kind;
+  final int coins;
+  final SpiritItem item;
+  final int itemCount;
 }

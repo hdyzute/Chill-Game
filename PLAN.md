@@ -92,7 +92,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Widget hiện pet và việc hôm nay (bước 3.2): widget Android 4×2 hiện linh thú (tên, cấp, tâm trạng), tiến độ và tối đa 3 việc chưa làm; bấm vào mở app; sang ngày mới mà chưa mở app thì nhắc mở app. Chưa tick được ngay trên widget
 
 **Giai đoạn 4: Bí cảnh và boss (một mình)**
-- [ ] Boss có HP; task hoàn thành gây sát thương lúc sang ngày; bỏ lỡ thì boss tấn công tâm trạng pet
+- [x] Boss có HP; task hoàn thành gây sát thương lúc sang ngày; bỏ lỡ thì boss tấn công tâm trạng pet (bước 4.1): thẻ Bí cảnh trong tab Linh thú, 3 boss lần lượt (Hắc Hỏa Lang 150 HP, Băng Giao 300, Thụ Yêu 450, hết vòng thì mạnh gấp bội), sát thương = số xu của việc tốt, gấp rưỡi nếu cùng hệ khắc chế; bỏ lỡ daily thì linh thú "Mệt" tới khi làm việc tốt; thắng được xu và 2 linh vật ngàn năm
 - [ ] Thành tựu, quà điểm danh
 
 **Giai đoạn 5: Phát hành**

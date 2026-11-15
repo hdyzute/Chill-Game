@@ -368,11 +368,13 @@ class _LogTile extends StatelessWidget {
         ),
       LogKind.bad => (Icons.thumb_down_alt_outlined, theme.colorScheme.error),
       LogKind.purchase => (Icons.card_giftcard, rewardColor),
+      LogKind.missed => (Icons.event_busy, theme.colorScheme.onSurfaceVariant),
     };
     final notes = [
       timeLabel(log.createdAt),
       if (log.kind == LogKind.bad) 'thói quen xấu',
       if (log.kind == LogKind.purchase) 'đổi phần thưởng',
+      if (log.kind == LogKind.missed) 'bỏ lỡ',
       if (log.critical) 'Linh khí bạo phát!',
       if (log.dropItem != null)
         'nhặt được ${dropLabel(log.dropItem!, log.dropCount)}',

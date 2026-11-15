@@ -137,4 +137,33 @@ void main() {
     expect(await rollover.run(), isNotNull);
     expect((await task(id)).completed, isFalse);
   });
+
+  test('ghi nhật ký từng ngày bỏ lỡ daily, vào cuối ngày đó', () async {
+    // Chỉ Thứ 2 và Thứ 4.
+    final id = await addTask(TaskType.daily, repeatDays: 0x5);
+    now = DateTime(2026, 11, 5, 9); // Thứ 5: bỏ lỡ Thứ 2 (2/11) và Thứ 4.
+    await rollover.run();
+
+    final missed = await (db.select(db.taskLogs)
+          ..where((l) => l.kind.equalsValue(LogKind.missed))
+          ..orderBy([(l) => OrderingTerm(expression: l.createdAt)]))
+        .get();
+    expect(missed.map((l) => l.createdAt),
+        [DateTime(2026, 11, 2, 23, 59), DateTime(2026, 11, 4, 23, 59)]);
+    expect(missed.map((l) => l.taskId), [id, id]);
+    expect(missed.first.title, 'Hằng ngày');
+    expect(missed.first.coinsDelta, 0);
+  });
+
+  test('đang bế quan thì không ghi bỏ lỡ', () async {
+    await addTask(TaskType.daily);
+    await ProfileRepository(db).setResting(true);
+    now = DateTime(2026, 11, 4, 9);
+    await rollover.run();
+    expect(
+        await (db.select(db.taskLogs)
+              ..where((l) => l.kind.equalsValue(LogKind.missed)))
+            .get(),
+        isEmpty);
+  });
 }

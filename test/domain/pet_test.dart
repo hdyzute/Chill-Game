@@ -88,6 +88,21 @@ void main() {
       expect(mood(resting: true), PetMood.calm);
     });
 
+    test('bị boss tấn công thì mệt cho tới khi làm việc tốt', () {
+      expect(petMood(deedToday: false, deedYesterday: false, goodToday: 0,
+          badToday: 0, resting: false, bossHit: true), PetMood.tired);
+      expect(petMood(deedToday: true, deedYesterday: false, goodToday: 1,
+          badToday: 0, resting: false, bossHit: true), PetMood.happy);
+      expect(petMood(deedToday: false, deedYesterday: false, goodToday: 0,
+          badToday: 0, resting: true, bossHit: true), PetMood.calm);
+      final s = petStatus(
+          contractDay: contract,
+          deedDays: {day(4)},
+          today: day(6),
+          bossHit: true);
+      expect(petLine(s, 'Mochi'), contains('bị boss tấn công'));
+    });
+
     test('việc xấu nhiều bằng việc tốt thì mệt', () {
       expect(mood(today: true, good: 1, bad: 1), PetMood.tired);
       expect(mood(bad: 1, yesterday: true), PetMood.tired);

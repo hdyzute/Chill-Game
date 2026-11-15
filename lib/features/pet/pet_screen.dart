@@ -9,6 +9,7 @@ import '../../domain/growth.dart';
 import '../../domain/history.dart';
 import '../../domain/pet.dart';
 import '../tasks/task_style.dart';
+import 'boss_card.dart';
 import 'field_card.dart';
 import 'pet_art.dart';
 
@@ -168,6 +169,8 @@ class _PetHome extends ConsumerWidget {
               ),
             ),
         ],
+        const SizedBox(height: 8),
+        BossCard(petName: pet.name),
         const SizedBox(height: 8),
         const FieldCard(),
         const SizedBox(height: 8),

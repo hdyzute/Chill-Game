@@ -2,8 +2,9 @@ import 'package:drift/drift.dart';
 
 import 'database.dart';
 
-/// Một lần làm việc tốt: lúc nào, thuộc hệ nào (null nếu task không có hệ).
-typedef Completion = ({DateTime at, TaskElement? element});
+/// Một lần làm việc tốt: lúc nào, thuộc hệ nào (null nếu task không có hệ),
+/// được bao nhiêu xu (dùng làm sát thương lên boss).
+typedef Completion = ({DateTime at, TaskElement? element, int coins});
 
 /// Đọc nhật ký chấm điểm cho tab Lịch sử. Chỉ đọc; ghi qua ScoreService.
 class HistoryRepository {
@@ -29,14 +30,26 @@ class HistoryRepository {
   Stream<List<Completion>> watchCompletions() {
     final logs = _db.taskLogs;
     final query = _db.selectOnly(logs)
-      ..addColumns([logs.createdAt, logs.element])
+      ..addColumns([logs.createdAt, logs.element, logs.coinsDelta])
       ..where(logs.kind.equalsValue(LogKind.complete));
     return query.watch().map((rows) => [
           for (final r in rows)
             (
               at: r.read(logs.createdAt)!,
               element: r.readWithConverter<TaskElement?, String>(logs.element),
+              coins: r.read(logs.coinsDelta)!,
             ),
         ]);
+  }
+
+  /// Thời điểm các lần bỏ lỡ daily (cuối ngày bị bỏ lỡ), cho Bí cảnh.
+  Stream<List<DateTime>> watchMissedTimes() {
+    final logs = _db.taskLogs;
+    final query = _db.selectOnly(logs)
+      ..addColumns([logs.createdAt])
+      ..where(logs.kind.equalsValue(LogKind.missed));
+    return query
+        .watch()
+        .map((rows) => [for (final r in rows) r.read(logs.createdAt)!]);
   }
 }

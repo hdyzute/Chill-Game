@@ -58,6 +58,20 @@ class RolloverService {
         var value = daily.value;
         var streak = daily.streak;
         if (misses > 0 && !profile.resting) {
+          // Ghi từng ngày bỏ lỡ (cuối ngày đó) cho Lịch sử và Bí cảnh.
+          for (var i = daily.completed ? 1 : 0; i < days; i++) {
+            final day = addDays(lastDate, i);
+            if (!isDueOn(daily.repeatDays, day)) continue;
+            await _db.into(_db.taskLogs).insert(TaskLogsCompanion.insert(
+                  taskId: daily.id,
+                  kind: LogKind.missed,
+                  title: Value(daily.title),
+                  element: Value(daily.element),
+                  createdAt: Value(
+                      dayStartInstant(addDays(day, 1), profile.dayStartHour)
+                          .subtract(const Duration(minutes: 1))),
+                ));
+          }
           for (var i = 0; i < misses; i++) {
             value += Scoring.delta(value, up: false);
           }

@@ -43,6 +43,7 @@ class PetStatus {
     required this.deedToday,
     this.mood = PetMood.calm,
     this.resting = false,
+    this.bossHit = false,
   });
 
   final PetStage stage;
@@ -63,6 +64,9 @@ class PetStatus {
 
   /// Người dùng đang bế quan.
   final bool resting;
+
+  /// Hôm qua bỏ lỡ daily nên boss trong Bí cảnh đã tấn công.
+  final bool bossHit;
 }
 
 /// [contractDay], [today] và các phần tử của [deedDays] là ngày logic.
@@ -75,6 +79,7 @@ PetStatus petStatus({
   int goodToday = 0,
   int badToday = 0,
   bool resting = false,
+  bool bossHit = false,
 }) {
   final counted = deedDays
       .where((d) => !d.isBefore(contractDay) && !d.isAfter(today))
@@ -98,21 +103,26 @@ PetStatus petStatus({
       goodToday: goodToday,
       badToday: badToday,
       resting: resting,
+      bossHit: bossHit,
     ),
     resting: resting,
+    bossHit: bossHit,
   );
 }
 
-/// Việc xấu nhiều bằng việc tốt thì mệt; có việc tốt hôm nay thì vui; hôm
-/// qua có việc tốt (hoặc đang bế quan) thì bình thường; còn lại thì buồn.
+/// Việc xấu nhiều bằng việc tốt thì mệt; bị boss tấn công mà hôm nay chưa
+/// làm việc tốt nào cũng mệt; có việc tốt hôm nay thì vui; hôm qua có việc
+/// tốt (hoặc đang bế quan) thì bình thường; còn lại thì buồn.
 PetMood petMood({
   required bool deedToday,
   required bool deedYesterday,
   required int goodToday,
   required int badToday,
   required bool resting,
+  bool bossHit = false,
 }) {
   if (badToday > 0 && badToday >= goodToday) return PetMood.tired;
+  if (bossHit && !deedToday && !resting) return PetMood.tired;
   if (deedToday) return PetMood.happy;
   if (deedYesterday || resting) return PetMood.calm;
   return PetMood.sad;
@@ -122,6 +132,9 @@ PetMood petMood({
 String petLine(PetStatus status, String name) => switch (status) {
       PetStatus(stage: PetStage.egg) =>
         'Quả trứng nằm im, chờ linh khí từ việc tốt đầu tiên của bạn.',
+      PetStatus(mood: PetMood.tired, bossHit: true, deedToday: false) =>
+        '$name bị boss tấn công vì hôm qua bỏ lỡ việc. Làm một việc tốt để '
+            'nó hồi lại nhé.',
       PetStatus(mood: PetMood.tired) =>
         '$name thấy mệt vì thói quen xấu hôm nay. Làm một việc tốt cho nó '
             'khỏe lại nhé.',

@@ -60,6 +60,25 @@ enum LogKind {
 
   /// Mua phần thưởng.
   purchase,
+
+  /// Bỏ lỡ một daily vào ngày phải làm. Ghi lúc sang ngày, không hoàn tác,
+  /// không có khi đang bế quan. Giờ ghi là cuối ngày bị bỏ lỡ.
+  missed,
+}
+
+/// Boss trong Bí cảnh, theo thứ tự khiêu chiến. Số liệu ở lib/domain/boss.dart.
+/// Lưu theo tên trong database: đổi tên giá trị cần migration.
+enum BossKind {
+  fireWolf('Hắc Hỏa Lang', TaskElement.fire, TaskElement.water),
+  iceDragon('Băng Giao', TaskElement.water, TaskElement.wood),
+  treeDemon('Thụ Yêu', TaskElement.wood, TaskElement.fire);
+
+  const BossKind(this.label, this.element, this.weakness);
+  final String label;
+  final TaskElement element;
+
+  /// Việc tốt hệ này gây gấp rưỡi sát thương.
+  final TaskElement weakness;
 }
 
 /// Giới hạn trên cho "số lần mỗi ngày" của thói quen.

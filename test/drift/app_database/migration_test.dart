@@ -17,6 +17,7 @@ import 'generated/schema_v7.dart' as v7;
 import 'generated/schema_v8.dart' as v8;
 import 'generated/schema_v9.dart' as v9;
 import 'generated/schema_v10.dart' as v10;
+import 'generated/schema_v11.dart' as v11;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -456,6 +457,29 @@ void main() {
         expect((await newDb.select(newDb.inventoryItems).getSingle()).item,
             'waterRare');
         expect(await newDb.select(newDb.plantings).get(), isEmpty);
+      },
+    );
+  });
+
+  // Bản 11 thêm Bí cảnh: chưa có boss nào, Linh điền và xu giữ nguyên.
+  test('nâng cấp v10 lên v11: chưa có boss, giữ cây và xu', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 10,
+      newVersion: 11,
+      createOld: v10.DatabaseAtV10.new,
+      createNew: v11.DatabaseAtV11.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.plantings,
+            const v10.PlantingsData(plot: 1, element: 'fire', plantedAt: 1794700000));
+        batch.insert(oldDb.profiles,
+            const v10.ProfilesData(
+                id: profileId, coins: 55, dayStartHour: 0, resting: 0));
+      },
+      validateItems: (newDb) async {
+        expect((await newDb.select(newDb.plantings).getSingle()).plot, 1);
+        expect((await newDb.select(newDb.profiles).getSingle()).coins, 55);
+        expect(await newDb.select(newDb.bosses).get(), isEmpty);
       },
     );
   });

@@ -747,4 +747,84 @@ void main() {
 
     await tearDownApp(tester);
   });
+
+  Future<void> addPetSince(DateTime contract) async {
+    await db.into(db.pets).insert(
+        PetsCompanion.insert(name: 'Mochi', createdAt: contract));
+  }
+
+  Future<void> addBoss(DateTime startedAt) => db.into(db.bosses).insert(
+      BossesCompanion.insert(kind: BossKind.fireWolf, startedAt: startedAt));
+
+  testWidgets('Bí cảnh: khiêu chiến boss đầu tiên', (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addDeed(DateTime(2026, 11, 1, 9));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    final challenge = find.widgetWithText(FilledButton, 'Khiêu chiến');
+    await scrollTo(tester, challenge);
+    expect(find.text('Hắc Hỏa Lang'), findsOneWidget);
+    await tester.tap(challenge);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Text>(find.byKey(const Key('boss-hp'))).data,
+        'HP 150/150');
+    expect(find.textContaining('Hôm nay tích lũy 0 sát thương'),
+        findsOneWidget);
+    expect((await db.select(db.bosses).getSingle()).kind, BossKind.fireWolf);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('Bí cảnh: bỏ lỡ hôm qua thì boss tấn công, linh thú mệt',
+      (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addDeed(DateTime(2026, 11, 1, 9)); // 0 xu: không gây sát thương
+    await addBoss(DateTime(2026, 11, 1, 10));
+    await db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+        taskId: 1,
+        kind: LogKind.missed,
+        createdAt: Value(DateTime(2026, 11, 2, 23, 59))));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    expect(find.text('Tâm trạng: Mệt'), findsOneWidget);
+    expect(find.textContaining('bị boss tấn công'), findsOneWidget);
+    await scrollTo(tester, find.byKey(const Key('boss-attack')));
+    expect(find.textContaining('Hắc Hỏa Lang đã tấn công Mochi'),
+        findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('Bí cảnh: đánh bại thì nhận thưởng, rồi khiêu chiến con sau',
+      (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addBoss(DateTime(2026, 11, 1, 10));
+    await db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+        taskId: 1,
+        kind: LogKind.complete,
+        coinsDelta: const Value(100),
+        element: const Value(TaskElement.water),
+        createdAt: Value(DateTime(2026, 11, 2, 9))));
+    await pumpApp(tester);
+    await openPetTab(tester);
+
+    final claim = find.widgetWithText(FilledButton, 'Nhận thưởng');
+    await scrollTo(tester, claim);
+    expect(find.text('Đã đánh bại Hắc Hỏa Lang!'), findsOneWidget);
+    await tester.tap(claim);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nhận 50 xu và 2 Hỏa Linh Quả ngàn năm'), findsOneWidget);
+    expect((await db.select(db.profiles).getSingle()).coins, 50);
+    expect(find.text('Băng Giao'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Khiêu chiến'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
 }

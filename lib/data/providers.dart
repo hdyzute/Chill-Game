@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/boss.dart';
 import '../domain/day.dart';
 import '../domain/history.dart';
 import '../domain/pet.dart';
 import '../domain/reminders.dart';
 import '../domain/widget_snapshot.dart';
+import 'boss_repository.dart';
 import 'database.dart';
 import 'history_repository.dart';
 import 'home_widget_updater.dart';
@@ -168,6 +170,7 @@ final petStatusProvider = Provider<PetStatus?>((ref) {
     goodToday: counts.values.fold(0, (a, b) => a + b),
     badToday: bad,
     resting: resting,
+    bossHit: ref.watch(bossProgressProvider)?.attacked ?? false,
   );
 });
 
@@ -240,5 +243,47 @@ final widgetSnapshotProvider = Provider<WidgetSnapshot?>((ref) {
     dayStartHour: hour,
     pet: pet.value,
     status: status,
+  );
+});
+
+final bossRepositoryProvider = Provider((ref) => BossRepository(
+      ref.watch(databaseProvider),
+      clock: ref.watch(clockProvider),
+    ));
+
+/// Boss đang đánh, null khi chưa khiêu chiến hoặc vừa nhận thưởng.
+final activeBossProvider =
+    StreamProvider<Boss?>((ref) => ref.watch(bossRepositoryProvider).watchActive());
+
+/// Số boss đã đánh bại, quyết định boss tiếp theo.
+final bossDefeatedCountProvider = StreamProvider<int>(
+    (ref) => ref.watch(bossRepositoryProvider).watchDefeatedCount());
+
+final _missedTimesProvider = StreamProvider<List<DateTime>>(
+    (ref) => ref.watch(historyRepositoryProvider).watchMissedTimes());
+
+/// HP, sát thương và lần tấn công của boss đang đánh. Null khi không có boss
+/// hoặc chưa tải xong.
+final bossProgressProvider = Provider<BossProgress?>((ref) {
+  final boss = ref.watch(activeBossProvider).value;
+  final completions = ref.watch(_completionsProvider).value;
+  final missed = ref.watch(_missedTimesProvider).value;
+  final hour = ref.watch(dayStartHourProvider);
+  final today = ref.watch(todayProvider);
+  if (boss == null ||
+      completions == null ||
+      missed == null ||
+      hour == null ||
+      today == null) {
+    return null;
+  }
+  return bossProgress(
+    kind: boss.kind,
+    tier: boss.tier,
+    startedAt: boss.startedAt,
+    deeds: completions,
+    missedDays: {for (final t in missed) logicalDate(t, hour)},
+    today: today,
+    dayStartHour: hour,
   );
 });

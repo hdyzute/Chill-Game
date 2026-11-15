@@ -3128,6 +3128,355 @@ class PlantingsCompanion extends UpdateCompanion<Planting> {
   }
 }
 
+class $BossesTable extends Bosses with TableInfo<$BossesTable, Boss> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BossesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<BossKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<BossKind>($BossesTable.$converterkind);
+  static const VerificationMeta _tierMeta = const VerificationMeta('tier');
+  @override
+  late final GeneratedColumn<int> tier = GeneratedColumn<int>(
+    'tier',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _claimedAtMeta = const VerificationMeta(
+    'claimedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> claimedAt = GeneratedColumn<DateTime>(
+    'claimed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, kind, tier, startedAt, claimedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bosses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Boss> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('tier')) {
+      context.handle(
+        _tierMeta,
+        tier.isAcceptableOrUnknown(data['tier']!, _tierMeta),
+      );
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('claimed_at')) {
+      context.handle(
+        _claimedAtMeta,
+        claimedAt.isAcceptableOrUnknown(data['claimed_at']!, _claimedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Boss map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Boss(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: $BossesTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      tier: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tier'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      claimedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}claimed_at'],
+      ),
+    );
+  }
+
+  @override
+  $BossesTable createAlias(String alias) {
+    return $BossesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<BossKind, String, String> $converterkind =
+      const EnumNameConverter<BossKind>(BossKind.values);
+}
+
+class Boss extends DataClass implements Insertable<Boss> {
+  final int id;
+  final BossKind kind;
+
+  /// Vòng thứ mấy (1, 2...): HP và phần thưởng nhân theo.
+  final int tier;
+  final DateTime startedAt;
+
+  /// Lúc nhận thưởng sau khi đánh bại. Null khi boss còn đang đánh.
+  final DateTime? claimedAt;
+  const Boss({
+    required this.id,
+    required this.kind,
+    required this.tier,
+    required this.startedAt,
+    this.claimedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    {
+      map['kind'] = Variable<String>($BossesTable.$converterkind.toSql(kind));
+    }
+    map['tier'] = Variable<int>(tier);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    if (!nullToAbsent || claimedAt != null) {
+      map['claimed_at'] = Variable<DateTime>(claimedAt);
+    }
+    return map;
+  }
+
+  BossesCompanion toCompanion(bool nullToAbsent) {
+    return BossesCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      tier: Value(tier),
+      startedAt: Value(startedAt),
+      claimedAt: claimedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(claimedAt),
+    );
+  }
+
+  factory Boss.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Boss(
+      id: serializer.fromJson<int>(json['id']),
+      kind: $BossesTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      tier: serializer.fromJson<int>(json['tier']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      claimedAt: serializer.fromJson<DateTime?>(json['claimedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(
+        $BossesTable.$converterkind.toJson(kind),
+      ),
+      'tier': serializer.toJson<int>(tier),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'claimedAt': serializer.toJson<DateTime?>(claimedAt),
+    };
+  }
+
+  Boss copyWith({
+    int? id,
+    BossKind? kind,
+    int? tier,
+    DateTime? startedAt,
+    Value<DateTime?> claimedAt = const Value.absent(),
+  }) => Boss(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    tier: tier ?? this.tier,
+    startedAt: startedAt ?? this.startedAt,
+    claimedAt: claimedAt.present ? claimedAt.value : this.claimedAt,
+  );
+  Boss copyWithCompanion(BossesCompanion data) {
+    return Boss(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      tier: data.tier.present ? data.tier.value : this.tier,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      claimedAt: data.claimedAt.present ? data.claimedAt.value : this.claimedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Boss(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('tier: $tier, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('claimedAt: $claimedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, kind, tier, startedAt, claimedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Boss &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.tier == this.tier &&
+          other.startedAt == this.startedAt &&
+          other.claimedAt == this.claimedAt);
+}
+
+class BossesCompanion extends UpdateCompanion<Boss> {
+  final Value<int> id;
+  final Value<BossKind> kind;
+  final Value<int> tier;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> claimedAt;
+  const BossesCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.tier = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.claimedAt = const Value.absent(),
+  });
+  BossesCompanion.insert({
+    this.id = const Value.absent(),
+    required BossKind kind,
+    this.tier = const Value.absent(),
+    required DateTime startedAt,
+    this.claimedAt = const Value.absent(),
+  }) : kind = Value(kind),
+       startedAt = Value(startedAt);
+  static Insertable<Boss> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<int>? tier,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? claimedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (tier != null) 'tier': tier,
+      if (startedAt != null) 'started_at': startedAt,
+      if (claimedAt != null) 'claimed_at': claimedAt,
+    });
+  }
+
+  BossesCompanion copyWith({
+    Value<int>? id,
+    Value<BossKind>? kind,
+    Value<int>? tier,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? claimedAt,
+  }) {
+    return BossesCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      tier: tier ?? this.tier,
+      startedAt: startedAt ?? this.startedAt,
+      claimedAt: claimedAt ?? this.claimedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $BossesTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (tier.present) {
+      map['tier'] = Variable<int>(tier.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (claimedAt.present) {
+      map['claimed_at'] = Variable<DateTime>(claimedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BossesCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('tier: $tier, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('claimedAt: $claimedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3137,6 +3486,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PetsTable pets = $PetsTable(this);
   late final $InventoryItemsTable inventoryItems = $InventoryItemsTable(this);
   late final $PlantingsTable plantings = $PlantingsTable(this);
+  late final $BossesTable bosses = $BossesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3148,6 +3498,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     pets,
     inventoryItems,
     plantings,
+    bosses,
   ];
 }
 
@@ -4720,6 +5071,202 @@ typedef $$PlantingsTableProcessedTableManager =
       Planting,
       PrefetchHooks Function()
     >;
+typedef $$BossesTableCreateCompanionBuilder = BossesCompanion Function({
+  Value<int> id,
+  required BossKind kind,
+  Value<int> tier,
+  required DateTime startedAt,
+  Value<DateTime?> claimedAt,
+});
+typedef $$BossesTableUpdateCompanionBuilder = BossesCompanion Function({
+  Value<int> id,
+  Value<BossKind> kind,
+  Value<int> tier,
+  Value<DateTime> startedAt,
+  Value<DateTime?> claimedAt,
+});
+
+class $$BossesTableFilterComposer
+    extends Composer<_$AppDatabase, $BossesTable> {
+  $$BossesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<BossKind, BossKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get tier => $composableBuilder(
+    column: $table.tier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get claimedAt => $composableBuilder(
+    column: $table.claimedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BossesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BossesTable> {
+  $$BossesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tier => $composableBuilder(
+    column: $table.tier,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get claimedAt => $composableBuilder(
+    column: $table.claimedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BossesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BossesTable> {
+  $$BossesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<BossKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get tier =>
+      $composableBuilder(column: $table.tier, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get claimedAt =>
+      $composableBuilder(column: $table.claimedAt, builder: (column) => column);
+}
+
+class $$BossesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BossesTable,
+          Boss,
+          $$BossesTableFilterComposer,
+          $$BossesTableOrderingComposer,
+          $$BossesTableAnnotationComposer,
+          $$BossesTableCreateCompanionBuilder,
+          $$BossesTableUpdateCompanionBuilder,
+          (Boss, BaseReferences<_$AppDatabase, $BossesTable, Boss>),
+          Boss,
+          PrefetchHooks Function()
+        > {
+  $$BossesTableTableManager(_$AppDatabase db, $BossesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BossesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BossesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BossesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<BossKind> kind = const Value.absent(),
+                Value<int> tier = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> claimedAt = const Value.absent(),
+              }) => BossesCompanion(
+                id: id,
+                kind: kind,
+                tier: tier,
+                startedAt: startedAt,
+                claimedAt: claimedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required BossKind kind,
+                Value<int> tier = const Value.absent(),
+                required DateTime startedAt,
+                Value<DateTime?> claimedAt = const Value.absent(),
+              }) => BossesCompanion.insert(
+                id: id,
+                kind: kind,
+                tier: tier,
+                startedAt: startedAt,
+                claimedAt: claimedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BossesTable, Boss>(table),
+                  BaseReferences<_$AppDatabase, $BossesTable, Boss>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BossesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BossesTable,
+      Boss,
+      $$BossesTableFilterComposer,
+      $$BossesTableOrderingComposer,
+      $$BossesTableAnnotationComposer,
+      $$BossesTableCreateCompanionBuilder,
+      $$BossesTableUpdateCompanionBuilder,
+      (Boss, BaseReferences<_$AppDatabase, $BossesTable, Boss>),
+      Boss,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4735,4 +5282,6 @@ class $AppDatabaseManager {
       $$InventoryItemsTableTableManager(_db, _db.inventoryItems);
   $$PlantingsTableTableManager get plantings =>
       $$PlantingsTableTableManager(_db, _db.plantings);
+  $$BossesTableTableManager get bosses =>
+      $$BossesTableTableManager(_db, _db.bosses);
 }

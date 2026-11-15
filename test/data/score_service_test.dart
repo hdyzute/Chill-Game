@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:linh_thu_ky_luat/data/boss_repository.dart';
 import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:linh_thu_ky_luat/data/profile_repository.dart';
 import 'package:linh_thu_ky_luat/data/score_service.dart';
@@ -351,6 +352,48 @@ void main() {
       await service.score(await addTask(TaskType.daily));
       now = now.add(const Duration(hours: 6));
       expect(await service.harvest(0), hasLength(Field.harvestCount));
+    });
+  });
+
+  group('Bí cảnh', () {
+    late BossRepository bosses;
+    setUp(() => bosses = BossRepository(db, clock: () => now));
+
+    Future<void> deed(DateTime at, int coins, TaskElement element) =>
+        db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+              taskId: 1,
+              kind: LogKind.complete,
+              coinsDelta: Value(coins),
+              element: Value(element),
+              createdAt: Value(at),
+            ));
+
+    test('khiêu chiến lần lượt; đang có boss thì không khiêu chiến thêm',
+        () async {
+      final first = await bosses.challengeNext();
+      expect([first.kind, first.tier, first.startedAt],
+          [BossKind.fireWolf, 1, now]);
+      await expectLater(bosses.challengeNext(), throwsStateError);
+    });
+
+    test('chưa đánh bại thì không nhận thưởng; đánh bại rồi thì nhận một lần',
+        () async {
+      await bosses.challengeNext();
+      // 100 xu hệ Thủy (gấp rưỡi = 150) hôm nay: chưa đánh vào boss.
+      await deed(now.add(const Duration(hours: 1)), 100, TaskElement.water);
+      await expectLater(service.claimBoss(), throwsStateError);
+
+      now = now.add(const Duration(days: 1));
+      final reward = await service.claimBoss();
+      expect(reward.coins, 50);
+      expect(reward.item, SpiritItem.fireRare);
+      expect(await coins(), 50);
+      expect(await service.watchInventory().first, {SpiritItem.fireRare: 2});
+      await expectLater(service.claimBoss(), throwsStateError);
+
+      final next = await bosses.challengeNext();
+      expect(next.kind, BossKind.iceDragon);
+      expect(await bosses.watchDefeatedCount().first, 1);
     });
   });
 }
