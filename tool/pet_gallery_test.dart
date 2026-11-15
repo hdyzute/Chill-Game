@@ -2,6 +2,9 @@
 // điện thoại. Không chạy cùng `flutter test` (nằm ngoài thư mục test/):
 //
 //   flutter test tool/pet_gallery_test.dart --dart-define=OUT=<file .png>
+//
+// Thêm --dart-define=PETS=<thư mục> để xuất từng linh thú ra PNG nền trong
+// suốt (dùng cho ảnh bìa store, xem tool/make_store_images.py).
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -13,11 +16,18 @@ import 'package:linh_thu_ky_luat/domain/pet.dart';
 import 'package:linh_thu_ky_luat/features/pet/pet_painter.dart';
 
 const out = String.fromEnvironment('OUT');
+const petsDir = String.fromEnvironment('PETS');
 const cell = 220.0;
 
 void main() {
   testWidgets('vẽ bảng hình linh thú', (tester) async {
-    expect(out, isNotEmpty, reason: 'Thiếu --dart-define=OUT=<file>');
+    expect(
+      out.isNotEmpty || petsDir.isNotEmpty,
+      isTrue,
+      reason: 'Thiếu --dart-define=OUT=<file> hoặc PETS=<thư mục>',
+    );
+    if (petsDir.isNotEmpty) await _exportPets(tester);
+    if (out.isEmpty) return;
     final rows = <List<CustomPainter>>[
       [
         const PetPainter(stage: PetStage.egg),
@@ -77,4 +87,28 @@ void main() {
       File(out).writeAsBytesSync(bytes!.buffer.asUint8List());
     });
   });
+}
+
+/// Từng linh thú, nền trong suốt, 600 × 600.
+Future<void> _exportPets(WidgetTester tester) async {
+  final pets = {
+    'egg': const PetPainter(stage: PetStage.egg, bob: 0.5),
+    'baby': const PetPainter(stage: PetStage.baby, mood: PetMood.happy),
+    for (final branch in TaskElement.values)
+      branch.name: PetPainter(
+        stage: PetStage.adult,
+        branch: branch,
+        mood: PetMood.happy,
+      ),
+  };
+  Directory(petsDir).createSync(recursive: true);
+  for (final MapEntry(key: name, value: painter) in pets.entries) {
+    await tester.runAsync(() async {
+      final recorder = ui.PictureRecorder();
+      painter.paint(Canvas(recorder), const Size.square(600));
+      final image = await recorder.endRecording().toImage(600, 600);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      File('$petsDir/$name.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+    });
+  }
 }
