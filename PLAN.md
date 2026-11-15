@@ -96,7 +96,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Thành tựu, quà điểm danh (bước 4.2): 6 thành tựu nhiều mốc (Tích đức: tổng việc tốt; Tâm bền: chuỗi ngày dài nhất; Viên mãn: ngày làm đủ daily; Chuyên cần: số lần điểm danh; Trảm yêu: boss đã thắng; Đồng hành: cấp linh thú), 24 mốc, chỉ là huy hiệu, không có thưởng; mở mốc mới thì báo, xem ở nút Thành tựu trong tab Lịch sử. Quà điểm danh ở đầu tab Hôm nay, mỗi ngày một lần, vòng 7 ngày (5 xu, 1 linh vật, 10 xu, 1 linh vật, 15 xu, 2 linh vật, ngày 7: 20 xu và 1 linh vật ngàn năm), đếm tổng số lần nên bỏ một ngày không mất bậc
 
 **Giai đoạn 5: Phát hành**
-- [ ] Icon, ảnh store, chính sách quyền riêng tư
+- [ ] Icon, ảnh store, chính sách quyền riêng tư. Đã có icon tạm (trứng linh thú nứt, ba đốm ba hệ, nền cam), vẽ bằng `tool/make_icon.py`, có icon thích ứng và bản đơn sắc; `store/icon_512.png` cho Google Play. Thay bằng icon đẹp hơn khi có (AI tạo ảnh, Canva hoặc thuê người vẽ)
 - [ ] Tài khoản Google Play Developer (phí một lần). Tài khoản cá nhân mới phải chạy closed testing với một số người test trong 14 ngày; kiểm tra lại yêu cầu hiện tại trước khi nộp
 - [ ] Phát hành bản 1.0
 
