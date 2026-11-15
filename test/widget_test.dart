@@ -14,11 +14,13 @@ import 'helpers.dart';
 void main() {
   late AppDatabase db;
   late FakeScheduler scheduler;
+  late FakeWidgetUpdater widgetUpdater;
 
   setUp(() {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     db = AppDatabase(NativeDatabase.memory());
     scheduler = FakeScheduler();
+    widgetUpdater = FakeWidgetUpdater();
   });
 
   // Thứ 3, 10 giờ sáng: cố định để lịch lặp theo thứ không phụ thuộc ngày chạy.
@@ -30,6 +32,7 @@ void main() {
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(clock),
         notificationSchedulerProvider.overrideWithValue(scheduler),
+        homeWidgetUpdaterProvider.overrideWithValue(widgetUpdater),
         scoreServiceProvider.overrideWithValue(
             ScoreService(db, random: NoCritRandom(), clock: clock)),
       ],
@@ -719,6 +722,28 @@ void main() {
 
     expect(scheduler.replaceCount, before + 1);
     expect(scheduler.plans, hasLength(7));
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('widget màn hình chính cập nhật khi tick việc', (tester) async {
+    await addTask('Đọc sách', TaskType.daily);
+    await db.into(db.pets).insert(PetsCompanion.insert(
+        name: 'Mochi', createdAt: DateTime(2026, 11, 3, 8)));
+    await pumpApp(tester);
+
+    expect(widgetUpdater.updates.last.title, 'Mochi · Trứng');
+    expect(widgetUpdater.updates.last.tasks, '• Đọc sách');
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+
+    final last = widgetUpdater.updates.last;
+    expect(last.emoji, '🐾');
+    expect(last.title, 'Mochi · Cấp 1');
+    expect(last.subtitle, 'Vui · Hôm nay 1/1 việc');
+    expect(last.tasks, 'Xong hết việc hôm nay!');
+    expect(last.date, '2026-11-03');
 
     await tearDownApp(tester);
   });

@@ -89,7 +89,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 
 **Giai đoạn 3: Linh điền + widget**
 - [x] Gieo hạt, cây lớn theo thời gian thực, thu hoạch ra linh vật (bước 3.1): 3 ô đất trong tab Linh thú, hạt 15 xu, chín sau 8 giờ, mỗi việc tốt cùng hệ giúp chín sớm 1 giờ, thu 2 linh vật cùng hệ (không tính vào giới hạn 5 món/ngày)
-- [ ] Widget hiện pet và việc hôm nay
+- [x] Widget hiện pet và việc hôm nay (bước 3.2): widget Android 4×2 hiện linh thú (tên, cấp, tâm trạng), tiến độ và tối đa 3 việc chưa làm; bấm vào mở app; sang ngày mới mà chưa mở app thì nhắc mở app. Chưa tick được ngay trên widget
 
 **Giai đoạn 4: Bí cảnh và boss (một mình)**
 - [ ] Boss có HP; task hoàn thành gây sát thương lúc sang ngày; bỏ lỡ thì boss tấn công tâm trạng pet

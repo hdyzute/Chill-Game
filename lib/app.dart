@@ -5,6 +5,7 @@ import 'core/theme.dart';
 import 'shell/day_watcher.dart';
 import 'shell/home_shell.dart';
 import 'shell/reminder_sync.dart';
+import 'shell/widget_sync.dart';
 
 class LinhThuApp extends StatelessWidget {
   const LinhThuApp({super.key});
@@ -20,7 +21,9 @@ class LinhThuApp extends StatelessWidget {
       locale: const Locale('vi'),
       supportedLocales: const [Locale('vi')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const DayWatcher(child: ReminderSync(child: HomeShell())),
+      home: const DayWatcher(
+        child: ReminderSync(child: WidgetSync(child: HomeShell())),
+      ),
     );
   }
 }

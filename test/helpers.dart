@@ -1,7 +1,9 @@
 import 'dart:math';
 
+import 'package:linh_thu_ky_luat/data/home_widget_updater.dart';
 import 'package:linh_thu_ky_luat/data/notification_scheduler.dart';
 import 'package:linh_thu_ky_luat/domain/reminders.dart';
+import 'package:linh_thu_ky_luat/domain/widget_snapshot.dart';
 
 /// Luôn trả 0.5, lớn hơn tỉ lệ bạo kích 3%, nên test không bị ngẫu nhiên.
 class NoCritRandom implements Random {
@@ -60,4 +62,12 @@ class SequenceRandom implements Random {
 
   @override
   int nextInt(int max) => throw UnimplementedError();
+}
+
+/// Ghi lại nội dung gửi sang widget thay vì gọi plugin.
+class FakeWidgetUpdater implements HomeWidgetUpdater {
+  final updates = <WidgetSnapshot>[];
+
+  @override
+  Future<void> update(WidgetSnapshot snapshot) async => updates.add(snapshot);
 }

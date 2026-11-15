@@ -4,8 +4,10 @@ import '../domain/day.dart';
 import '../domain/history.dart';
 import '../domain/pet.dart';
 import '../domain/reminders.dart';
+import '../domain/widget_snapshot.dart';
 import 'database.dart';
 import 'history_repository.dart';
+import 'home_widget_updater.dart';
 import 'notification_scheduler.dart';
 import 'pet_repository.dart';
 import 'profile_repository.dart';
@@ -208,4 +210,35 @@ final todayCountsProvider = StreamProvider<Map<int, int>>((ref) {
   return ref
       .watch(scoreServiceProvider)
       .watchCountsSince(dayStartInstant(today, hour));
+});
+
+final homeWidgetUpdaterProvider =
+    Provider<HomeWidgetUpdater>((ref) => AndroidHomeWidgetUpdater());
+
+/// Nội dung widget màn hình chính. Null khi dữ liệu chưa tải xong.
+final widgetSnapshotProvider = Provider<WidgetSnapshot?>((ref) {
+  final tasks = ref.watch(tasksProvider).value;
+  final counts = ref.watch(todayCountsProvider).value;
+  final today = ref.watch(todayProvider);
+  final hour = ref.watch(dayStartHourProvider);
+  final pet = ref.watch(petProvider);
+  if (tasks == null ||
+      counts == null ||
+      today == null ||
+      hour == null ||
+      !pet.hasValue) {
+    return null;
+  }
+  final status = ref.watch(petStatusProvider);
+  // Có linh thú mà chưa tính xong trạng thái thì chờ, để widget không nháy
+  // qua bản "chưa có linh thú".
+  if (pet.value != null && status == null) return null;
+  return widgetSnapshot(
+    tasks: tasks,
+    todayCounts: counts,
+    today: today,
+    dayStartHour: hour,
+    pet: pet.value,
+    status: status,
+  );
 });

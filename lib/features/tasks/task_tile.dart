@@ -2,15 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../domain/reminders.dart';
+import '../../domain/today.dart';
 import 'task_style.dart';
-
-/// Daily và việc cần làm: xong khi đã tick. Thói quen tốt: khi đủ số lần
-/// hôm nay. Thói quen chỉ có "xấu" thì không bao giờ "xong".
-bool isTaskDone(Task task, int todayCount) => switch (task.type) {
-      TaskType.habit => task.habitUp && todayCount >= task.dailyTarget,
-      TaskType.daily || TaskType.todo => task.completed,
-      TaskType.reward => false,
-    };
 
 class TaskTile extends StatelessWidget {
   const TaskTile({

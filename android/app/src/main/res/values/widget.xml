@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Linh thú và việc hôm nay</string>
+    <color name="widget_background">#FFF8F2</color>
+    <color name="widget_text">#3B2A20</color>
+    <color name="widget_text_muted">#7A6152</color>
+</resources>
