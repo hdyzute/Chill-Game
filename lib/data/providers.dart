@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/achievements.dart';
 import '../domain/boss.dart';
 import '../domain/day.dart';
 import '../domain/history.dart';
 import '../domain/pet.dart';
 import '../domain/reminders.dart';
+import '../domain/today.dart';
 import '../domain/widget_snapshot.dart';
 import 'boss_repository.dart';
 import 'database.dart';
@@ -285,5 +287,64 @@ final bossProgressProvider = Provider<BossProgress?>((ref) {
     missedDays: {for (final t in missed) logicalDate(t, hour)},
     today: today,
     dayStartHour: hour,
+  );
+});
+
+final _checkInTimesProvider = StreamProvider<List<DateTime>>(
+    (ref) => ref.watch(scoreServiceProvider).watchCheckInTimes());
+
+/// Điểm danh: đã điểm danh bao nhiêu lần, hôm nay đã điểm danh chưa. Null
+/// khi chưa tải xong.
+final checkInStatusProvider =
+    Provider<({int count, bool doneToday})?>((ref) {
+  final times = ref.watch(_checkInTimesProvider).value;
+  final hour = ref.watch(dayStartHourProvider);
+  final today = ref.watch(todayProvider);
+  if (times == null || hour == null || today == null) return null;
+  return (
+    count: times.length,
+    doneToday: times.any((t) => logicalDate(t, hour) == today),
+  );
+});
+
+/// Số liệu để xét thành tựu. Null khi chưa tải xong.
+final achievementStatsProvider = Provider<AchievementStats?>((ref) {
+  final completions = ref.watch(_completionsProvider).value;
+  final deedDays = ref.watch(_deedDaysProvider);
+  final missed = ref.watch(_missedTimesProvider).value;
+  final tasks = ref.watch(tasksProvider).value;
+  final counts = ref.watch(todayCountsProvider).value;
+  final checkIn = ref.watch(checkInStatusProvider);
+  final bosses = ref.watch(bossDefeatedCountProvider).value;
+  final pet = ref.watch(petProvider);
+  final hour = ref.watch(dayStartHourProvider);
+  final today = ref.watch(todayProvider);
+  if (completions == null ||
+      deedDays == null ||
+      missed == null ||
+      tasks == null ||
+      counts == null ||
+      checkIn == null ||
+      bosses == null ||
+      !pet.hasValue ||
+      hour == null ||
+      today == null) {
+    return null;
+  }
+  final todayPerfect = tasks
+      .where((t) => t.type == TaskType.daily && isDueToday(t, today))
+      .every((t) => isTaskDone(t, counts[t.id] ?? 0));
+  return AchievementStats(
+    deeds: completions.length,
+    longestStreak: longestRun(deedDays),
+    perfectDays: perfectDayCount(
+      deedDays: deedDays,
+      missedDays: {for (final t in missed) logicalDate(t, hour)},
+      today: today,
+      todayPerfect: todayPerfect,
+    ),
+    checkIns: checkIn.count,
+    bosses: bosses,
+    petLevel: pet.value?.level ?? 0,
   );
 });

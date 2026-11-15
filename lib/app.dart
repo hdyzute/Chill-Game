@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme.dart';
+import 'shell/achievement_watcher.dart';
 import 'shell/day_watcher.dart';
 import 'shell/home_shell.dart';
 import 'shell/reminder_sync.dart';
@@ -22,7 +23,9 @@ class LinhThuApp extends StatelessWidget {
       supportedLocales: const [Locale('vi')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: const DayWatcher(
-        child: ReminderSync(child: WidgetSync(child: HomeShell())),
+        child: ReminderSync(
+          child: WidgetSync(child: AchievementWatcher(child: HomeShell())),
+        ),
       ),
     );
   }

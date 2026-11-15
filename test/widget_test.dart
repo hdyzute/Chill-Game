@@ -827,4 +827,108 @@ void main() {
 
     await tearDownApp(tester);
   });
+
+  testWidgets('điểm danh ở tab Hôm nay: nhận quà một lần mỗi ngày',
+      (tester) async {
+    await addTask('Chạy bộ', TaskType.daily);
+    await pumpApp(tester);
+
+    expect(find.text('Quà điểm danh · ngày 1/7'), findsOneWidget);
+    expect(find.text('5 xu · ngày 7 có quà lớn'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Nhận'));
+    await tester.pumpAndSettle();
+
+    expect(coinsShown(tester), '5');
+    expect(find.text('Điểm danh lần 1: nhận 5 xu'), findsOneWidget);
+    expect(find.byKey(const Key('check-in')), findsNothing);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('mở mốc thành tựu thì báo, bấm Xem mở màn Thành tựu',
+      (tester) async {
+    phoneView(tester);
+    await addTask('Chạy bộ', TaskType.daily);
+    await pumpApp(tester);
+    // Chờ số liệu ổn định làm mốc so sánh.
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    // Snackbar thành tựu xếp hàng sau snackbar "Hoàn tác" (3 giây).
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    expect(
+        find.text('Thành tựu mới: Viên mãn · 1 ngày làm đủ mọi việc hằng ngày'),
+        findsOneWidget);
+    await tester.tap(find.text('Xem'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đã mở 1/24 mốc thành tựu'), findsOneWidget);
+    expect(
+        tester
+            .widget<Text>(find.byKey(const Key('achievement-deeds-progress')))
+            .data,
+        '1/10');
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('bỏ tick rồi tick lại không báo thành tựu lần nữa',
+      (tester) async {
+    await addTask('Chạy bộ', TaskType.daily);
+    await pumpApp(tester);
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Thành tựu mới'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Bỏ tick'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Hoàn thành'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Thành tựu mới'), findsNothing);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('tab Lịch sử mở màn Thành tựu, quà điểm danh hiện trong nhật ký',
+      (tester) async {
+    phoneView(tester);
+    await db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+        taskId: checkInTaskId,
+        kind: LogKind.checkIn,
+        coinsDelta: const Value(5),
+        title: const Value('Quà điểm danh'),
+        createdAt: Value(DateTime(2026, 11, 3, 8))));
+    await pumpApp(tester);
+    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quà điểm danh'), findsOneWidget);
+    expect(find.text('+5 xu'), findsOneWidget);
+
+    await tester.tap(find.text('Thành tựu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đã mở 0/24 mốc thành tựu'), findsOneWidget);
+    expect(
+        tester
+            .widget<Text>(
+                find.byKey(const Key('achievement-checkIns-progress')))
+            .data,
+        '1/7');
+
+    await tearDownApp(tester);
+  });
 }

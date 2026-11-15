@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 
 import '../domain/boss.dart';
+import '../domain/check_in.dart';
 import '../domain/day.dart';
 import '../domain/drops.dart';
 import '../domain/field.dart';
@@ -72,6 +73,56 @@ class ScoreService {
       ..where(_db.taskLogs.kind.equalsValue(LogKind.bad) &
           _db.taskLogs.createdAt.isBiggerOrEqualValue(since));
     return query.watchSingle().map((row) => row.read(count)!);
+  }
+
+  /// Thời điểm mọi lần điểm danh, cũ trước.
+  Stream<List<DateTime>> watchCheckInTimes() {
+    final logs = _db.taskLogs;
+    final query = _db.selectOnly(logs)
+      ..addColumns([logs.createdAt])
+      ..where(logs.kind.equalsValue(LogKind.checkIn))
+      ..orderBy([OrderingTerm(expression: logs.createdAt)]);
+    return query
+        .watch()
+        .map((rows) => [for (final r in rows) r.read(logs.createdAt)!]);
+  }
+
+  /// Nhận quà điểm danh hôm nay (ngày logic): xu và linh vật theo bậc (xem
+  /// check_in.dart). Ném [StateError] khi hôm nay đã điểm danh. Không hoàn
+  /// tác, giống thu hoạch.
+  Future<CheckInResult> checkIn() {
+    return _db.transaction(() async {
+      final profile = await (_db.select(_db.profiles)
+            ..where((p) => p.id.equals(profileId)))
+          .getSingle();
+      final since = todayStart(_clock(), profile.dayStartHour);
+      final logs = _db.taskLogs;
+      final count = logs.id.count();
+      final todayQuery = _db.selectOnly(logs)
+        ..addColumns([count])
+        ..where(logs.kind.equalsValue(LogKind.checkIn) &
+            logs.createdAt.isBiggerOrEqualValue(since));
+      if ((await todayQuery.getSingle()).read(count)! > 0) {
+        throw StateError('Hôm nay đã điểm danh');
+      }
+      final allQuery = _db.selectOnly(logs)
+        ..addColumns([count])
+        ..where(logs.kind.equalsValue(LogKind.checkIn));
+      final number = (await allQuery.getSingle()).read(count)! + 1;
+      final gift = CheckIn.giftFor(number);
+      await _addCoins(gift.coins);
+      if (gift.item != null) await _addItem(gift.item!, gift.itemCount);
+      await _db.into(logs).insert(TaskLogsCompanion.insert(
+            taskId: checkInTaskId,
+            kind: LogKind.checkIn,
+            coinsDelta: Value(gift.coins),
+            dropItem: Value(gift.item),
+            dropCount: Value(gift.itemCount),
+            createdAt: Value(_clock()),
+            title: const Value('Quà điểm danh'),
+          ));
+      return CheckInResult(number: number, gift: gift);
+    });
   }
 
   /// Cây đang trồng trên Linh điền, theo thứ tự ô.
@@ -396,7 +447,9 @@ class ScoreService {
           DateTime since) =>
       _db.selectOnly(_db.taskLogs)
         ..addColumns([_dropSum])
-        ..where(_db.taskLogs.createdAt.isBiggerOrEqualValue(since));
+        // Chỉ tính đồ rơi khi làm việc tốt, không tính quà điểm danh.
+        ..where(_db.taskLogs.kind.equalsValue(LogKind.complete) &
+            _db.taskLogs.createdAt.isBiggerOrEqualValue(since));
 
   Future<int> _dropsToday() async {
     final profile = await (_db.select(_db.profiles)
@@ -446,4 +499,12 @@ class BossReward {
   final int coins;
   final SpiritItem item;
   final int itemCount;
+}
+
+class CheckInResult {
+  const CheckInResult({required this.number, required this.gift});
+
+  /// Lần điểm danh thứ mấy, tính từ 1.
+  final int number;
+  final CheckInGift gift;
 }

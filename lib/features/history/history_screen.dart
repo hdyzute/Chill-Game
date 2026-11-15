@@ -5,6 +5,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../domain/drops.dart';
 import '../../domain/history.dart';
+import '../achievements/achievements_screen.dart';
 import '../tasks/task_style.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -89,7 +90,18 @@ class _Frame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Lịch sử')),
+        appBar: AppBar(
+          title: const Text('Lịch sử'),
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const AchievementsScreen())),
+              icon: const Icon(Icons.emoji_events),
+              label: const Text('Thành tựu'),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
         body: child,
       );
 }
@@ -369,6 +381,7 @@ class _LogTile extends StatelessWidget {
       LogKind.bad => (Icons.thumb_down_alt_outlined, theme.colorScheme.error),
       LogKind.purchase => (Icons.card_giftcard, rewardColor),
       LogKind.missed => (Icons.event_busy, theme.colorScheme.onSurfaceVariant),
+      LogKind.checkIn => (Icons.redeem, rewardColor),
     };
     final notes = [
       timeLabel(log.createdAt),
@@ -376,7 +389,9 @@ class _LogTile extends StatelessWidget {
       if (log.kind == LogKind.purchase) 'đổi phần thưởng',
       if (log.kind == LogKind.missed) 'bỏ lỡ',
       if (log.critical) 'Linh khí bạo phát!',
-      if (log.dropItem != null)
+      if (log.dropItem != null && log.kind == LogKind.checkIn)
+        'nhận ${dropLabel(log.dropItem!, log.dropCount)}'
+      else if (log.dropItem != null)
         'nhặt được ${dropLabel(log.dropItem!, log.dropCount)}',
     ];
     final coins = log.coinsDelta;

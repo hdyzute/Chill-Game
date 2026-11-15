@@ -6,6 +6,7 @@ import '../../data/providers.dart';
 import '../../domain/day.dart';
 import '../../domain/drops.dart';
 import '../../domain/today.dart';
+import 'check_in_card.dart';
 import 'task_form_screen.dart';
 import 'task_style.dart';
 import 'task_tile.dart';
@@ -164,6 +165,7 @@ class _TaskList extends StatelessWidget {
       // Chừa chỗ cho nút + và cho thanh điều hướng bên cạnh khi xoay ngang.
       padding: const EdgeInsets.only(bottom: 96) + MediaQuery.paddingOf(context),
       children: [
+        const CheckInCard(),
         for (final type in TaskType.values)
           if (tasks.any((t) => t.type == type)) ...[
             Padding(

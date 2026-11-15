@@ -396,4 +396,45 @@ void main() {
       expect(await bosses.watchDefeatedCount().first, 1);
     });
   });
+
+  group('Điểm danh', () {
+    test('mỗi ngày một lần, quà theo bậc vào ví và túi', () async {
+      final first = await service.checkIn();
+      expect(first.number, 1);
+      expect(await coins(), 5);
+      await expectLater(service.checkIn(), throwsStateError);
+
+      now = now.add(const Duration(days: 1));
+      final second = await service.checkIn();
+      expect(second.number, 2);
+      expect(await coins(), 5);
+      expect(await service.watchInventory().first, {SpiritItem.waterCommon: 1});
+      expect((await service.watchCheckInTimes().first).length, 2);
+
+      final logs = await db.select(db.taskLogs).get();
+      expect(logs.map((l) => l.kind), everyElement(LogKind.checkIn));
+      expect(logs.last.dropItem, SpiritItem.waterCommon);
+    });
+
+    test('theo giờ bắt đầu ngày: 2 giờ sáng vẫn là hôm trước', () async {
+      await ProfileRepository(db).setDayStartHour(4);
+      now = DateTime(2026, 11, 3, 23);
+      await service.checkIn();
+      now = DateTime(2026, 11, 4, 2);
+      await expectLater(service.checkIn(), throwsStateError);
+      now = DateTime(2026, 11, 4, 5);
+      expect((await service.checkIn()).number, 2);
+    });
+
+    test('quà điểm danh không tính vào giới hạn rơi đồ mỗi ngày', () async {
+      now = now.add(const Duration(days: 1));
+      // Lần 2 tặng 1 linh vật.
+      await db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+          taskId: checkInTaskId,
+          kind: LogKind.checkIn,
+          createdAt: Value(now.subtract(const Duration(days: 1)))));
+      await service.checkIn();
+      expect(await service.watchDropsSince(DateTime(2026, 11, 4)).first, 0);
+    });
+  });
 }

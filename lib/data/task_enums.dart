@@ -64,7 +64,14 @@ enum LogKind {
   /// Bỏ lỡ một daily vào ngày phải làm. Ghi lúc sang ngày, không hoàn tác,
   /// không có khi đang bế quan. Giờ ghi là cuối ngày bị bỏ lỡ.
   missed,
+
+  /// Nhận quà điểm danh, mỗi ngày một lần. Không gắn với task nào
+  /// ([checkInTaskId]); xu và linh vật của quà nằm ở coinsDelta, dropItem.
+  checkIn,
 }
+
+/// taskId của dòng nhật ký không thuộc task nào, như quà điểm danh.
+const checkInTaskId = 0;
 
 /// Boss trong Bí cảnh, theo thứ tự khiêu chiến. Số liệu ở lib/domain/boss.dart.
 /// Lưu theo tên trong database: đổi tên giá trị cần migration.

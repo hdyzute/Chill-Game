@@ -93,7 +93,7 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 
 **Giai đoạn 4: Bí cảnh và boss (một mình)**
 - [x] Boss có HP; task hoàn thành gây sát thương lúc sang ngày; bỏ lỡ thì boss tấn công tâm trạng pet (bước 4.1): thẻ Bí cảnh trong tab Linh thú, 3 boss lần lượt (Hắc Hỏa Lang 150 HP, Băng Giao 300, Thụ Yêu 450, hết vòng thì mạnh gấp bội), sát thương = số xu của việc tốt, gấp rưỡi nếu cùng hệ khắc chế; bỏ lỡ daily thì linh thú "Mệt" tới khi làm việc tốt; thắng được xu và 2 linh vật ngàn năm
-- [ ] Thành tựu, quà điểm danh
+- [x] Thành tựu, quà điểm danh (bước 4.2): 6 thành tựu nhiều mốc (Tích đức: tổng việc tốt; Tâm bền: chuỗi ngày dài nhất; Viên mãn: ngày làm đủ daily; Chuyên cần: số lần điểm danh; Trảm yêu: boss đã thắng; Đồng hành: cấp linh thú), 24 mốc, chỉ là huy hiệu, không có thưởng; mở mốc mới thì báo, xem ở nút Thành tựu trong tab Lịch sử. Quà điểm danh ở đầu tab Hôm nay, mỗi ngày một lần, vòng 7 ngày (5 xu, 1 linh vật, 10 xu, 1 linh vật, 15 xu, 2 linh vật, ngày 7: 20 xu và 1 linh vật ngàn năm), đếm tổng số lần nên bỏ một ngày không mất bậc
 
 **Giai đoạn 5: Phát hành**
 - [ ] Icon, ảnh store, chính sách quyền riêng tư
