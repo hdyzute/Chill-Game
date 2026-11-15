@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../domain/reminders.dart';
+import '../../shared/exact_reminders.dart';
 import 'task_style.dart';
 
 /// Tạo task mới khi [task] là null, ngược lại là sửa task đó.
@@ -331,14 +332,17 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     if (picked == null || !mounted) return;
     setState(() => _reminderMinutes = picked.hour * 60 + picked.minute);
 
-    final allowed =
-        await ref.read(notificationSchedulerProvider).requestPermission();
-    if (!allowed && mounted) {
+    final scheduler = ref.read(notificationSchedulerProvider);
+    final allowed = await scheduler.requestPermission();
+    if (!mounted) return;
+    if (!allowed) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Bạn chưa cho phép thông báo. Vào Cài đặt điện thoại → '
             'Ứng dụng → Linh Thú Kỷ Luật → Thông báo để bật.'),
       ));
+      return;
     }
+    await askExactReminders(context, scheduler);
   }
 
   Future<void> _confirmDelete() async {

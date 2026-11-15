@@ -1,7 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Đặt lại lịch nhắc sau khi khởi động lại máy. Nhắc giờ dùng lịch
-         không chính xác tuyệt đối nên không cần quyền exact alarm. -->
+    <!-- Đặt lại lịch nhắc sau khi khởi động lại máy. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Nhắc đúng giờ. Từ Android 14 người dùng phải tự bật ("Báo thức và
+         lời nhắc"); chưa bật thì app nhắc kiểu không chính xác, có thể trễ tới
+         1 giờ. Không dùng USE_EXACT_ALARM: Google Play chỉ cho app báo thức
+         và lịch dùng quyền đó. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <application
         android:label="Linh Thú Kỷ Luật"
         android:name="${applicationName}"

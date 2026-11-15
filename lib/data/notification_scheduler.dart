@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -10,7 +11,18 @@ abstract class NotificationScheduler {
   /// Hỏi quyền gửi thông báo (Android 13+). Trả về true nếu được phép.
   Future<bool> requestPermission();
 
-  /// Xóa mọi lịch nhắc chưa tới giờ và đặt lại theo [plans].
+  /// Có được đặt nhắc đúng giờ không (quyền "Báo thức và lời nhắc").
+  /// Không có thì Android có thể nhắc trễ tới 1 giờ.
+  Future<bool> canScheduleExact();
+
+  /// Mở màn hình hệ thống để người dùng bật nhắc đúng giờ.
+  Future<void> requestExactPermission();
+
+  /// Mở trang thông tin của app, nơi bật "Tự khởi chạy" và bỏ giới hạn pin.
+  Future<void> openAppSettings();
+
+  /// Xóa mọi lịch nhắc chưa tới giờ và đặt lại theo [plans]. Đặt đúng giờ
+  /// nếu được phép, không thì đặt kiểu không chính xác.
   Future<void> replaceAll(List<ReminderPlan> plans);
 }
 
@@ -50,9 +62,31 @@ class LocalNotificationScheduler implements NotificationScheduler {
     return await _android?.requestNotificationsPermission() ?? true;
   }
 
+  static const _system = MethodChannel('linh_thu/system');
+
+  @override
+  Future<bool> canScheduleExact() async {
+    await _init();
+    return await _android?.canScheduleExactNotifications() ?? true;
+  }
+
+  @override
+  Future<void> requestExactPermission() async {
+    await _init();
+    await _android?.requestExactAlarmsPermission();
+  }
+
+  @override
+  Future<void> openAppSettings() => _system.invokeMethod('openAppSettings');
+
   @override
   Future<void> replaceAll(List<ReminderPlan> plans) async {
     await _init();
+    final mode = await canScheduleExact()
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        // Không có quyền thì Android gom lịch để tiết kiệm pin: nhắc có thể
+        // trễ tới 1 giờ.
+        : AndroidScheduleMode.inexactAllowWhileIdle;
     // Chỉ xóa lịch chưa tới giờ, không gỡ thông báo đang hiện.
     await _plugin.cancelAllPendingNotifications();
     for (final plan in plans) {
@@ -62,9 +96,7 @@ class LocalNotificationScheduler implements NotificationScheduler {
         body: plan.body,
         scheduledDate: tz.TZDateTime.from(plan.first, tz.local),
         notificationDetails: _details,
-        // Không chính xác tuyệt đối (có thể trễ vài phút) nhưng không cần
-        // quyền exact alarm, vốn bị Google Play hạn chế.
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: mode,
         matchDateTimeComponents: plan.weekly
             ? DateTimeComponents.dayOfWeekAndTime
             : DateTimeComponents.time,

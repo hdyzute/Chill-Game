@@ -635,4 +635,91 @@ void main() {
 
     await tearDownApp(tester);
   });
+
+  testWidgets('chọn giờ nhắc khi chưa được nhắc đúng giờ thì hỏi bật',
+      (tester) async {
+    phoneView(tester);
+    scheduler.exact = false;
+    await pumpApp(tester);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Không nhắc'));
+    await tester.tap(find.text('Không nhắc'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nhắc đúng giờ?'), findsOneWidget);
+    await tester.tap(find.text('Mở cài đặt'));
+    await tester.pumpAndSettle();
+    expect(scheduler.exactRequests, 1);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('đã được nhắc đúng giờ thì không hỏi lại', (tester) async {
+    phoneView(tester);
+    await pumpApp(tester);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Không nhắc'));
+    await tester.tap(find.text('Không nhắc'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nhắc đúng giờ?'), findsNothing);
+    expect(scheduler.exactRequests, 0);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('cài đặt: bật nhắc đúng giờ, mở trang của app', (tester) async {
+    phoneView(tester);
+    scheduler.exact = false;
+    await pumpApp(tester);
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Chưa bật: Android có thể nhắc trễ'),
+        findsOneWidget);
+    await tester.tap(find.byKey(const Key('exact-reminders')));
+    await tester.pumpAndSettle();
+    expect(scheduler.exactRequests, 1);
+
+    // Người dùng bật trong cài đặt hệ thống rồi quay lại app.
+    scheduler.exact = true;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Đã bật: nhắc nhở đến đúng giờ'),
+        findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('app-settings')));
+    await tester.pumpAndSettle();
+    expect(scheduler.appSettingsOpened, 1);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('quay lại app thì đặt lại lịch nhắc', (tester) async {
+    await addTask('Đọc sách', TaskType.daily, reminderMinutes: 21 * 60);
+    await pumpApp(tester);
+    final before = scheduler.replaceCount;
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(scheduler.replaceCount, before + 1);
+    expect(scheduler.plans, hasLength(7));
+
+    await tearDownApp(tester);
+  });
 }

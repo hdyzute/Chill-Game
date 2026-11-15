@@ -24,6 +24,19 @@ class FakeScheduler implements NotificationScheduler {
   @override
   Future<bool> requestPermission() async => permission;
 
+  bool exact = true;
+  int exactRequests = 0;
+  int appSettingsOpened = 0;
+
+  @override
+  Future<bool> canScheduleExact() async => exact;
+
+  @override
+  Future<void> requestExactPermission() async => exactRequests++;
+
+  @override
+  Future<void> openAppSettings() async => appSettingsOpened++;
+
   @override
   Future<void> replaceAll(List<ReminderPlan> plans) async {
     this.plans = plans;

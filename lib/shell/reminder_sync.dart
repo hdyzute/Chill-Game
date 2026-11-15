@@ -6,7 +6,9 @@ import '../data/providers.dart';
 import '../domain/reminders.dart';
 
 /// Đặt lại lịch nhắc với hệ điều hành mỗi khi [reminderPlansProvider] đổi
-/// (thêm/sửa task, tick xong, sang ngày mới).
+/// (thêm/sửa task, tick xong, sang ngày mới), và mỗi lần app trở lại màn
+/// hình: để áp dụng quyền nhắc đúng giờ vừa bật, và đặt lại lịch mà Xiaomi
+/// hay các máy tiết kiệm pin đã xóa khi tắt app.
 class ReminderSync extends ConsumerStatefulWidget {
   const ReminderSync({super.key, required this.child});
 
@@ -19,6 +21,7 @@ class ReminderSync extends ConsumerStatefulWidget {
 class _ReminderSyncState extends ConsumerState<ReminderSync> {
   // Chạy lần lượt để hai lần đặt lịch không chen nhau.
   Future<void> _queue = Future.value();
+  late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
@@ -27,17 +30,31 @@ class _ReminderSyncState extends ConsumerState<ReminderSync> {
       reminderPlansProvider,
       (previous, next) {
         if (next == null || listEquals(previous, next)) return;
-        final scheduler = ref.read(notificationSchedulerProvider);
-        _queue = _queue.then((_) async {
-          try {
-            await scheduler.replaceAll(next);
-          } catch (e) {
-            debugPrint('Không đặt được lịch nhắc: $e');
-          }
-        });
+        _schedule(next);
       },
       fireImmediately: true,
     );
+    _lifecycle = AppLifecycleListener(onResume: () {
+      final plans = ref.read(reminderPlansProvider);
+      if (plans != null) _schedule(plans);
+    });
+  }
+
+  void _schedule(List<ReminderPlan> plans) {
+    final scheduler = ref.read(notificationSchedulerProvider);
+    _queue = _queue.then((_) async {
+      try {
+        await scheduler.replaceAll(plans);
+      } catch (e) {
+        debugPrint('Không đặt được lịch nhắc: $e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   @override

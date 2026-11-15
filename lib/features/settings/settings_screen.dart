@@ -48,19 +48,77 @@ class SettingsScreen extends ConsumerWidget {
               onChanged: repo.setResting,
             ),
             const Divider(),
-            const ListTile(
-              leading: Icon(Icons.notifications_paused_outlined),
-              title: Text('Không nhận được nhắc nhở?'),
-              subtitle: Text(
-                'Một số máy (Xiaomi, Oppo, Huawei...) tự tắt app chạy nền. '
-                'Vào Cài đặt điện thoại → Ứng dụng → Linh Thú Kỷ Luật: '
-                'bật "Tự khởi động" và chọn "Không giới hạn" ở mục Tiết kiệm pin. '
-                'Nhắc nhở có thể trễ vài phút.',
+            const _ExactRemindersTile(),
+            ListTile(
+              key: const Key('app-settings'),
+              leading: const Icon(Icons.notifications_paused_outlined),
+              title: const Text('Có ngày không nhận được nhắc nhở?'),
+              subtitle: const Text(
+                'Xiaomi, Oppo, Huawei... hay tự tắt app chạy nền và xóa luôn '
+                'lịch nhắc. Bấm để mở trang của app, rồi bật "Tự khởi chạy" và '
+                'chọn "Không giới hạn" ở mục Tiết kiệm pin.',
               ),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () =>
+                  ref.read(notificationSchedulerProvider).openAppSettings(),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Trạng thái quyền nhắc đúng giờ, kiểm tra lại mỗi khi quay về app (người
+/// dùng vừa bật hoặc tắt trong cài đặt hệ thống).
+class _ExactRemindersTile extends ConsumerStatefulWidget {
+  const _ExactRemindersTile();
+
+  @override
+  ConsumerState<_ExactRemindersTile> createState() =>
+      _ExactRemindersTileState();
+}
+
+class _ExactRemindersTileState extends ConsumerState<_ExactRemindersTile> {
+  bool? _exact;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+    _lifecycle = AppLifecycleListener(onResume: _check);
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  Future<void> _check() async {
+    final exact =
+        await ref.read(notificationSchedulerProvider).canScheduleExact();
+    if (mounted) setState(() => _exact = exact);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final exact = _exact;
+    return ListTile(
+      key: const Key('exact-reminders'),
+      leading: Icon(exact == false ? Icons.alarm_off : Icons.alarm_on,
+          color: exact == false ? theme.colorScheme.error : null),
+      title: const Text('Nhắc đúng giờ'),
+      subtitle: Text(switch (exact) {
+        null => 'Đang kiểm tra...',
+        true => 'Đã bật: nhắc nhở đến đúng giờ đã đặt.',
+        false => 'Chưa bật: Android có thể nhắc trễ tới 1 giờ. Bấm để bật.',
+      }),
+      onTap: exact == false
+          ? () => ref.read(notificationSchedulerProvider).requestExactPermission()
+          : null,
     );
   }
 }
