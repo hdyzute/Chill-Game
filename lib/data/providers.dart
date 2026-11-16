@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/achievements.dart';
+import '../domain/battle.dart';
 import '../domain/boss.dart';
 import '../domain/day.dart';
 import '../domain/history.dart';
@@ -347,4 +348,51 @@ final achievementStatsProvider = Provider<AchievementStats?>((ref) {
     bosses: bosses,
     petLevel: pet.value?.level ?? 0,
   );
+});
+
+/// Nhật ký của ngày hôm qua (ngày logic), cho trận boss.
+final _yesterdayLogsProvider = StreamProvider<List<TaskLog>>((ref) {
+  final today = ref.watch(todayProvider);
+  final hour = ref.watch(dayStartHourProvider);
+  if (today == null || hour == null) return const Stream.empty();
+  return ref.watch(historyRepositoryProvider).watchBetween(
+        dayStartInstant(addDays(today, -1), hour),
+        dayStartInstant(today, hour),
+      );
+});
+
+/// Trận hôm qua với boss đang đánh. Null khi không có boss, boss mới khiêu
+/// chiến hôm nay, hoặc dữ liệu chưa tải xong.
+final battleReplayProvider = Provider<BattleReplay?>((ref) {
+  final boss = ref.watch(activeBossProvider).value;
+  final completions = ref.watch(_completionsProvider).value;
+  final logs = ref.watch(_yesterdayLogsProvider).value;
+  final hour = ref.watch(dayStartHourProvider);
+  final today = ref.watch(todayProvider);
+  if (boss == null ||
+      completions == null ||
+      logs == null ||
+      hour == null ||
+      today == null) {
+    return null;
+  }
+  final yesterday = addDays(today, -1);
+  if (yesterday.isBefore(logicalDate(boss.startedAt, hour))) return null;
+  return battleReplay(
+    kind: boss.kind,
+    tier: boss.tier,
+    startedAt: boss.startedAt,
+    deeds: completions,
+    dayLogs: logs,
+    day: yesterday,
+    dayStartHour: hour,
+  );
+});
+
+/// Trận hôm qua có diễn biến mà chưa chiếu: tự mở mỗi sáng một lần.
+final unseenBattleProvider = Provider<BattleReplay?>((ref) {
+  final replay = ref.watch(battleReplayProvider);
+  final profile = ref.watch(profileProvider).value;
+  if (replay == null || profile == null || !replay.eventful) return null;
+  return profile.lastBattleDay == replay.day ? null : replay;
 });

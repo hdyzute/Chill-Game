@@ -19,6 +19,10 @@ class ProfileRepository {
   Future<void> setResting(bool resting) =>
       _write(ProfilesCompanion(resting: Value(resting)));
 
+  /// Ghi nhận đã chiếu trận boss của ngày [day] (ngày logic).
+  Future<void> setLastBattleDay(DateTime day) =>
+      _write(ProfilesCompanion(lastBattleDay: Value(day)));
+
   Future<void> _write(ProfilesCompanion fields) =>
       (_db.update(_db.profiles)..where((p) => p.id.equals(profileId)))
           .write(fields);

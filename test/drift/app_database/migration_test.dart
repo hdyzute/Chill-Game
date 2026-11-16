@@ -18,6 +18,7 @@ import 'generated/schema_v8.dart' as v8;
 import 'generated/schema_v9.dart' as v9;
 import 'generated/schema_v10.dart' as v10;
 import 'generated/schema_v11.dart' as v11;
+import 'generated/schema_v12.dart' as v12;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -480,6 +481,33 @@ void main() {
         expect((await newDb.select(newDb.plantings).getSingle()).plot, 1);
         expect((await newDb.select(newDb.profiles).getSingle()).coins, 55);
         expect(await newDb.select(newDb.bosses).get(), isEmpty);
+      },
+    );
+  });
+
+  // Bản 12 nhớ ngày đã chiếu trận boss: người dùng cũ chưa xem trận nào,
+  // boss đang đánh và xu giữ nguyên.
+  test('nâng cấp v11 lên v12: chưa xem trận nào, giữ boss và xu', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 11,
+      newVersion: 12,
+      createOld: v11.DatabaseAtV11.new,
+      createNew: v12.DatabaseAtV12.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.bosses,
+            const v11.BossesData(
+                id: 1, kind: 'fireWolf', tier: 1, startedAt: 1794700000));
+        batch.insert(oldDb.profiles,
+            const v11.ProfilesData(
+                id: profileId, coins: 81, dayStartHour: 0, resting: 0));
+      },
+      validateItems: (newDb) async {
+        expect((await newDb.select(newDb.bosses).getSingle()).kind,
+            'fireWolf');
+        final profile = await newDb.select(newDb.profiles).getSingle();
+        expect(profile.coins, 81);
+        expect(profile.lastBattleDay, isNull);
       },
     );
   });

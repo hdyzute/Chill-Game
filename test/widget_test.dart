@@ -8,6 +8,7 @@ import 'package:linh_thu_ky_luat/app.dart';
 import 'package:linh_thu_ky_luat/data/database.dart';
 import 'package:linh_thu_ky_luat/data/providers.dart';
 import 'package:linh_thu_ky_luat/data/score_service.dart';
+import 'package:linh_thu_ky_luat/features/pet/battle_screen.dart';
 
 import 'helpers.dart';
 
@@ -753,8 +754,26 @@ void main() {
         PetsCompanion.insert(name: 'Mochi', createdAt: contract));
   }
 
-  Future<void> addBoss(DateTime startedAt) => db.into(db.bosses).insert(
-      BossesCompanion.insert(kind: BossKind.fireWolf, startedAt: startedAt));
+  /// Boss đang đánh. Mặc định coi như đã xem trận hôm qua (2/11), để màn
+  /// trận không tự mở giữa các test về thẻ Bí cảnh.
+  Future<void> addBoss(DateTime startedAt, {bool seenBattle = true}) async {
+    await db.into(db.bosses).insert(
+        BossesCompanion.insert(kind: BossKind.fireWolf, startedAt: startedAt));
+    if (seenBattle) {
+      await (db.update(db.profiles)..where((p) => p.id.equals(profileId)))
+          .write(ProfilesCompanion(lastBattleDay: Value(DateTime(2026, 11, 2))));
+    }
+  }
+
+  Future<void> addLog(LogKind kind, DateTime at,
+          {int coins = 0, TaskElement? element, String title = 'Chạy bộ'}) =>
+      db.into(db.taskLogs).insert(TaskLogsCompanion.insert(
+          taskId: 1,
+          kind: kind,
+          coinsDelta: Value(coins),
+          element: Value(element),
+          title: Value(title),
+          createdAt: Value(at)));
 
   testWidgets('Bí cảnh: khiêu chiến boss đầu tiên', (tester) async {
     phoneView(tester);
@@ -928,6 +947,147 @@ void main() {
                 find.byKey(const Key('achievement-checkIns-progress')))
             .data,
         '1/7');
+
+    await tearDownApp(tester);
+  });
+
+  // Mở app hôm nay (3/11) thì tự chiếu trận hôm qua (2/11).
+  Future<void> openBattle(WidgetTester tester) async {
+    await pumpApp(tester);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('trận boss: mỗi sáng tự chiếu trận hôm qua một lần',
+      (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addBoss(DateTime(2026, 11, 1, 10), seenBattle: false);
+    await addLog(LogKind.complete, DateTime(2026, 11, 2, 9),
+        coins: 20, element: TaskElement.fire, title: 'Chạy bộ');
+    await addLog(LogKind.complete, DateTime(2026, 11, 2, 20),
+        coins: 30, element: TaskElement.water, title: 'Đọc sách');
+    await openBattle(tester);
+
+    expect(find.byType(BattleScreen), findsOneWidget);
+    expect(find.text('Trận Thứ Hai, 2/11'), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('battle-hp'))).data,
+        'HP 85/150');
+    expect(find.text('Chạy bộ'), findsOneWidget);
+    expect(find.text('Đọc sách'), findsOneWidget);
+    expect(find.text('khắc chế, gấp rưỡi'), findsOneWidget);
+    expect(find.text('−45'), findsOneWidget);
+    expect(find.text('Gây 65 sát thương. Hắc Hỏa Lang còn 85/150 HP.'),
+        findsOneWidget);
+
+    await tapVisible(tester, find.widgetWithText(FilledButton, 'Xong'));
+    expect(find.byType(BattleScreen), findsNothing);
+    expect((await db.select(db.profiles).getSingle()).lastBattleDay,
+        DateTime(2026, 11, 2));
+    // Đã xem rồi thì không tự mở lại.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(find.byType(BattleScreen), findsNothing);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('trận boss: hạ gục boss thì mở rương nhận thưởng',
+      (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addBoss(DateTime(2026, 11, 1, 10), seenBattle: false);
+    await addLog(LogKind.complete, DateTime(2026, 11, 2, 9),
+        coins: 100, element: TaskElement.water, title: 'Đọc sách');
+    await openBattle(tester);
+
+    // Chữ to có hai lớp: viền tối và màu.
+    expect(find.text('Chiến thắng!'), findsNWidgets(2));
+    expect(find.text('Đã đánh bại Hắc Hỏa Lang!'), findsOneWidget);
+    await tapVisible(tester, find.widgetWithText(FilledButton, 'Mở rương'));
+
+    expect(tester.widget<Text>(find.byKey(const Key('battle-reward'))).data,
+        'Nhận 50 xu và 2 Hỏa Linh Quả ngàn năm');
+    expect((await db.select(db.profiles).getSingle()).coins, 50);
+    expect((await db.select(db.bosses).getSingle()).claimedAt, isNotNull);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('trận boss: bỏ lỡ việc thì boss đánh trả; bấm Bỏ qua tới kết quả',
+      (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addBoss(DateTime(2026, 11, 1, 10), seenBattle: false);
+    await addLog(LogKind.missed, DateTime(2026, 11, 2, 23, 59),
+        title: 'Ngủ đúng giờ');
+    await pumpApp(tester);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(BattleScreen), findsOneWidget);
+
+    await tester.tap(find.text('Bỏ qua'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bỏ qua'), findsNothing);
+    expect(find.text('Hắc Hỏa Lang đánh trả, Mochi bị mệt'), findsOneWidget);
+    expect(find.text('Bỏ lỡ: Ngủ đúng giờ'), findsOneWidget);
+    expect(find.text('Hắc Hỏa Lang còn 150/150 HP.'), findsOneWidget);
+
+    await tearDownApp(tester);
+  });
+
+  testWidgets('trận boss: đã xem thì xem lại từ thẻ Bí cảnh', (tester) async {
+    phoneView(tester);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addBoss(DateTime(2026, 11, 1, 10));
+    await addLog(LogKind.complete, DateTime(2026, 11, 2, 9),
+        coins: 20, element: TaskElement.fire);
+    await openBattle(tester);
+    expect(find.byType(BattleScreen), findsNothing);
+
+    await openPetTab(tester);
+    final replay = find.widgetWithText(OutlinedButton, 'Xem trận hôm qua');
+    await scrollTo(tester, replay);
+    await tester.tap(replay);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BattleScreen), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('battle-hp'))).data,
+        'HP 130/150');
+
+    await tearDownApp(tester);
+  });
+
+  // Điện thoại để ngang thì sàn đấu từng cao hơn màn hình, boss và linh thú
+  // bị cắt mất phía dưới.
+  testWidgets('trận boss: màn ngang vẫn thấy trọn sàn đấu', (tester) async {
+    tester.view.physicalSize = const Size(2400, 1080);
+    tester.view.devicePixelRatio = 2.75;
+    // Thanh trạng thái ở trên, tai thỏ camera bên trái như máy thật.
+    tester.view.padding = const FakeViewPadding(left: 132, top: 110);
+    tester.view.viewPadding = const FakeViewPadding(left: 132, top: 110);
+    addTearDown(tester.view.reset);
+    await addPetSince(DateTime(2026, 11, 1, 8));
+    await addBoss(DateTime(2026, 11, 1, 10), seenBattle: false);
+    await addLog(LogKind.complete, DateTime(2026, 11, 2, 9),
+        coins: 20, element: TaskElement.fire);
+    await openBattle(tester);
+
+    expect(find.byType(BattleScreen), findsOneWidget);
+    final stage = tester.getRect(find
+        .descendant(
+            of: find.byType(BattleScreen), matching: find.byType(AspectRatio))
+        .first);
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(stage.bottom, lessThanOrEqualTo(screen.height));
+    expect(stage.top, greaterThanOrEqualTo(0));
 
     await tearDownApp(tester);
   });

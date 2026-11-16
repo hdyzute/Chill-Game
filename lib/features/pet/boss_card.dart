@@ -7,6 +7,8 @@ import '../../data/score_service.dart';
 import '../../domain/boss.dart';
 import '../../domain/drops.dart';
 import '../tasks/task_style.dart';
+import 'battle_screen.dart';
+import 'pet_painter.dart';
 
 /// Bí cảnh: khiêu chiến boss, xem HP và sát thương hôm nay, nhận thưởng khi
 /// đánh bại.
@@ -34,6 +36,7 @@ class BossCard extends ConsumerWidget {
     } else {
       body = _Fighting(progress: progress, petName: petName);
     }
+    final replay = ref.watch(battleReplayProvider);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -43,6 +46,15 @@ class BossCard extends ConsumerWidget {
             Text('Bí cảnh', style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
             body,
+            if (boss != null && replay != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => BattleScreen(replay: replay))),
+                icon: const Icon(Icons.movie_filter_outlined),
+                label: const Text('Xem trận hôm qua'),
+              ),
+            ],
           ],
         ),
       ),
@@ -61,10 +73,14 @@ class _BossHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: kind.element.color.withValues(alpha: 0.15),
-          child: Icon(kind.element.icon, color: kind.element.color),
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: kind.element.color.withValues(alpha: 0.15),
+          ),
+          child: CustomPaint(painter: BossPainter(kind: kind, tier: tier)),
         ),
         const SizedBox(width: 12),
         Expanded(

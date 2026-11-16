@@ -8,9 +8,10 @@ import '../../domain/pet.dart';
 import '../tasks/task_style.dart';
 import 'pet_painter.dart';
 
-/// Tắt chuyển động khi chạy `flutter test`: hoạt ảnh lặp mãi làm
-/// `pumpAndSettle` không bao giờ dừng.
-final bool _animate = !Platform.environment.containsKey('FLUTTER_TEST');
+/// Hoạt ảnh lặp mãi (nhún, chớp mắt). Tắt khi chạy `flutter test`, vì hoạt
+/// ảnh lặp làm `pumpAndSettle` không bao giờ dừng.
+final bool ambientAnimations =
+    !Platform.environment.containsKey('FLUTTER_TEST');
 
 /// Hình linh thú (vẽ ở pet_painter.dart): nhún nhẹ và chớp mắt, trứng lắc
 /// lư. Trưởng thành mang màu và đặc điểm của nhánh; nét mặt theo [mood].
@@ -21,12 +22,16 @@ class PetArt extends StatefulWidget {
     this.branch,
     this.mood = PetMood.calm,
     this.size = 180,
+    this.background = true,
   });
 
   final PetStage stage;
   final TaskElement? branch;
   final PetMood mood;
   final double size;
+
+  /// Vẽ nền tròn phía sau; tắt khi đặt linh thú vào cảnh như trận boss.
+  final bool background;
 
   @override
   State<PetArt> createState() => _PetArtState();
@@ -38,7 +43,7 @@ class _PetArtState extends State<PetArt> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    if (_animate) {
+    if (ambientAnimations) {
       _controller = AnimationController(
           vsync: this, duration: const Duration(seconds: 4))
         ..repeat();
@@ -82,7 +87,9 @@ class _PetArtState extends State<PetArt> with SingleTickerProviderStateMixin {
       child: Container(
         width: widget.size,
         height: widget.size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: background),
+        decoration: widget.background
+            ? BoxDecoration(shape: BoxShape.circle, color: background)
+            : null,
         child: still
             ? paint(0, false)
             : AnimatedBuilder(

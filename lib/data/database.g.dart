@@ -1790,6 +1790,18 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _lastBattleDayMeta = const VerificationMeta(
+    'lastBattleDay',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastBattleDay =
+      GeneratedColumn<DateTime>(
+        'last_battle_day',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1797,6 +1809,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
     dayStartHour,
     resting,
     lastRolloverDate,
+    lastBattleDay,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1843,6 +1856,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         ),
       );
     }
+    if (data.containsKey('last_battle_day')) {
+      context.handle(
+        _lastBattleDayMeta,
+        lastBattleDay.isAcceptableOrUnknown(
+          data['last_battle_day']!,
+          _lastBattleDayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1872,6 +1894,10 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_rollover_date'],
       ),
+      lastBattleDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_battle_day'],
+      ),
     );
   }
 
@@ -1893,12 +1919,17 @@ class Profile extends DataClass implements Insertable<Profile> {
 
   /// Ngày (logic) đã xử lý sang ngày gần nhất. Null khi chưa mở app lần nào.
   final DateTime? lastRolloverDate;
+
+  /// Ngày (logic) của trận boss đã chiếu gần nhất, để mỗi sáng chỉ tự mở
+  /// trận hôm qua một lần. Null khi chưa xem trận nào.
+  final DateTime? lastBattleDay;
   const Profile({
     required this.id,
     required this.coins,
     required this.dayStartHour,
     required this.resting,
     this.lastRolloverDate,
+    this.lastBattleDay,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1909,6 +1940,9 @@ class Profile extends DataClass implements Insertable<Profile> {
     map['resting'] = Variable<bool>(resting);
     if (!nullToAbsent || lastRolloverDate != null) {
       map['last_rollover_date'] = Variable<DateTime>(lastRolloverDate);
+    }
+    if (!nullToAbsent || lastBattleDay != null) {
+      map['last_battle_day'] = Variable<DateTime>(lastBattleDay);
     }
     return map;
   }
@@ -1922,6 +1956,9 @@ class Profile extends DataClass implements Insertable<Profile> {
       lastRolloverDate: lastRolloverDate == null && nullToAbsent
           ? const Value.absent()
           : Value(lastRolloverDate),
+      lastBattleDay: lastBattleDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastBattleDay),
     );
   }
 
@@ -1938,6 +1975,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       lastRolloverDate: serializer.fromJson<DateTime?>(
         json['lastRolloverDate'],
       ),
+      lastBattleDay: serializer.fromJson<DateTime?>(json['lastBattleDay']),
     );
   }
   @override
@@ -1949,6 +1987,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       'dayStartHour': serializer.toJson<int>(dayStartHour),
       'resting': serializer.toJson<bool>(resting),
       'lastRolloverDate': serializer.toJson<DateTime?>(lastRolloverDate),
+      'lastBattleDay': serializer.toJson<DateTime?>(lastBattleDay),
     };
   }
 
@@ -1958,6 +1997,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     int? dayStartHour,
     bool? resting,
     Value<DateTime?> lastRolloverDate = const Value.absent(),
+    Value<DateTime?> lastBattleDay = const Value.absent(),
   }) => Profile(
     id: id ?? this.id,
     coins: coins ?? this.coins,
@@ -1966,6 +2006,9 @@ class Profile extends DataClass implements Insertable<Profile> {
     lastRolloverDate: lastRolloverDate.present
         ? lastRolloverDate.value
         : this.lastRolloverDate,
+    lastBattleDay: lastBattleDay.present
+        ? lastBattleDay.value
+        : this.lastBattleDay,
   );
   Profile copyWithCompanion(ProfilesCompanion data) {
     return Profile(
@@ -1978,6 +2021,9 @@ class Profile extends DataClass implements Insertable<Profile> {
       lastRolloverDate: data.lastRolloverDate.present
           ? data.lastRolloverDate.value
           : this.lastRolloverDate,
+      lastBattleDay: data.lastBattleDay.present
+          ? data.lastBattleDay.value
+          : this.lastBattleDay,
     );
   }
 
@@ -1988,14 +2034,21 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('coins: $coins, ')
           ..write('dayStartHour: $dayStartHour, ')
           ..write('resting: $resting, ')
-          ..write('lastRolloverDate: $lastRolloverDate')
+          ..write('lastRolloverDate: $lastRolloverDate, ')
+          ..write('lastBattleDay: $lastBattleDay')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, coins, dayStartHour, resting, lastRolloverDate);
+  int get hashCode => Object.hash(
+    id,
+    coins,
+    dayStartHour,
+    resting,
+    lastRolloverDate,
+    lastBattleDay,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2004,7 +2057,8 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.coins == this.coins &&
           other.dayStartHour == this.dayStartHour &&
           other.resting == this.resting &&
-          other.lastRolloverDate == this.lastRolloverDate);
+          other.lastRolloverDate == this.lastRolloverDate &&
+          other.lastBattleDay == this.lastBattleDay);
 }
 
 class ProfilesCompanion extends UpdateCompanion<Profile> {
@@ -2013,12 +2067,14 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<int> dayStartHour;
   final Value<bool> resting;
   final Value<DateTime?> lastRolloverDate;
+  final Value<DateTime?> lastBattleDay;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.coins = const Value.absent(),
     this.dayStartHour = const Value.absent(),
     this.resting = const Value.absent(),
     this.lastRolloverDate = const Value.absent(),
+    this.lastBattleDay = const Value.absent(),
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -2026,6 +2082,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.dayStartHour = const Value.absent(),
     this.resting = const Value.absent(),
     this.lastRolloverDate = const Value.absent(),
+    this.lastBattleDay = const Value.absent(),
   });
   static Insertable<Profile> custom({
     Expression<int>? id,
@@ -2033,6 +2090,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<int>? dayStartHour,
     Expression<bool>? resting,
     Expression<DateTime>? lastRolloverDate,
+    Expression<DateTime>? lastBattleDay,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2040,6 +2098,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (dayStartHour != null) 'day_start_hour': dayStartHour,
       if (resting != null) 'resting': resting,
       if (lastRolloverDate != null) 'last_rollover_date': lastRolloverDate,
+      if (lastBattleDay != null) 'last_battle_day': lastBattleDay,
     });
   }
 
@@ -2049,6 +2108,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Value<int>? dayStartHour,
     Value<bool>? resting,
     Value<DateTime?>? lastRolloverDate,
+    Value<DateTime?>? lastBattleDay,
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
@@ -2056,6 +2116,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       dayStartHour: dayStartHour ?? this.dayStartHour,
       resting: resting ?? this.resting,
       lastRolloverDate: lastRolloverDate ?? this.lastRolloverDate,
+      lastBattleDay: lastBattleDay ?? this.lastBattleDay,
     );
   }
 
@@ -2077,6 +2138,9 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (lastRolloverDate.present) {
       map['last_rollover_date'] = Variable<DateTime>(lastRolloverDate.value);
     }
+    if (lastBattleDay.present) {
+      map['last_battle_day'] = Variable<DateTime>(lastBattleDay.value);
+    }
     return map;
   }
 
@@ -2087,7 +2151,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('coins: $coins, ')
           ..write('dayStartHour: $dayStartHour, ')
           ..write('resting: $resting, ')
-          ..write('lastRolloverDate: $lastRolloverDate')
+          ..write('lastRolloverDate: $lastRolloverDate, ')
+          ..write('lastBattleDay: $lastBattleDay')
           ..write(')'))
         .toString();
   }
@@ -4298,6 +4363,7 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   Value<int> dayStartHour,
   Value<bool> resting,
   Value<DateTime?> lastRolloverDate,
+  Value<DateTime?> lastBattleDay,
 });
 typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
@@ -4305,6 +4371,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> dayStartHour,
   Value<bool> resting,
   Value<DateTime?> lastRolloverDate,
+  Value<DateTime?> lastBattleDay,
 });
 
 class $$ProfilesTableFilterComposer
@@ -4338,6 +4405,11 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<DateTime> get lastRolloverDate => $composableBuilder(
     column: $table.lastRolloverDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastBattleDay => $composableBuilder(
+    column: $table.lastBattleDay,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4375,6 +4447,11 @@ class $$ProfilesTableOrderingComposer
     column: $table.lastRolloverDate,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get lastBattleDay => $composableBuilder(
+    column: $table.lastBattleDay,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProfilesTableAnnotationComposer
@@ -4402,6 +4479,11 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastRolloverDate => $composableBuilder(
     column: $table.lastRolloverDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastBattleDay => $composableBuilder(
+    column: $table.lastBattleDay,
     builder: (column) => column,
   );
 }
@@ -4439,12 +4521,14 @@ class $$ProfilesTableTableManager
                 Value<int> dayStartHour = const Value.absent(),
                 Value<bool> resting = const Value.absent(),
                 Value<DateTime?> lastRolloverDate = const Value.absent(),
+                Value<DateTime?> lastBattleDay = const Value.absent(),
               }) => ProfilesCompanion(
                 id: id,
                 coins: coins,
                 dayStartHour: dayStartHour,
                 resting: resting,
                 lastRolloverDate: lastRolloverDate,
+                lastBattleDay: lastBattleDay,
               ),
           createCompanionCallback:
               ({
@@ -4453,12 +4537,14 @@ class $$ProfilesTableTableManager
                 Value<int> dayStartHour = const Value.absent(),
                 Value<bool> resting = const Value.absent(),
                 Value<DateTime?> lastRolloverDate = const Value.absent(),
+                Value<DateTime?> lastBattleDay = const Value.absent(),
               }) => ProfilesCompanion.insert(
                 id: id,
                 coins: coins,
                 dayStartHour: dayStartHour,
                 resting: resting,
                 lastRolloverDate: lastRolloverDate,
+                lastBattleDay: lastBattleDay,
               ),
           withReferenceMapper: (p0) => p0
               .map(

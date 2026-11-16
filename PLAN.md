@@ -95,6 +95,16 @@ Làm **Android trước**: máy đã có Android SDK. iOS cần máy Mac hoặc 
 - [x] Boss có HP; task hoàn thành gây sát thương lúc sang ngày; bỏ lỡ thì boss tấn công tâm trạng pet (bước 4.1): thẻ Bí cảnh trong tab Linh thú, 3 boss lần lượt (Hắc Hỏa Lang 150 HP, Băng Giao 300, Thụ Yêu 450, hết vòng thì mạnh gấp bội), sát thương = số xu của việc tốt, gấp rưỡi nếu cùng hệ khắc chế; bỏ lỡ daily thì linh thú "Mệt" tới khi làm việc tốt; thắng được xu và 2 linh vật ngàn năm
 - [x] Thành tựu, quà điểm danh (bước 4.2): 6 thành tựu nhiều mốc (Tích đức: tổng việc tốt; Tâm bền: chuỗi ngày dài nhất; Viên mãn: ngày làm đủ daily; Chuyên cần: số lần điểm danh; Trảm yêu: boss đã thắng; Đồng hành: cấp linh thú), 24 mốc, chỉ là huy hiệu, không có thưởng; mở mốc mới thì báo, xem ở nút Thành tựu trong tab Lịch sử. Quà điểm danh ở đầu tab Hôm nay, mỗi ngày một lần, vòng 7 ngày (5 xu, 1 linh vật, 10 xu, 1 linh vật, 15 xu, 2 linh vật, ngày 7: 20 xu và 1 linh vật ngàn năm), đếm tổng số lần nên bỏ một ngày không mất bậc
 
+**Giai đoạn 4.5: Làm game vui hơn (trước khi phát hành)**
+
+Ngày 16/11/2026 chủ app thấy phần game còn chán: linh thú chỉ để ngắm, boss chỉ là thanh HP, xu không có chỗ tiêu, thiếu khoảnh khắc ăn mừng. Quyết định làm giai đoạn này trước khi phát hành, vì người thử thấy chán sẽ gỡ app. Nguyên tắc: tick thói quen vẫn phải nhanh trong 1 giây; phần vui nằm ở tab Linh thú và màn kết toán buổi sáng.
+- [x] Trận đánh boss có hình (bước 4.5.1): vẽ 3 boss (đứng, bị đánh, gục; vòng 2 trở đi có hào quang); mỗi sáng mở app tự chiếu trận hôm qua một lần: mỗi việc tốt là một đòn (linh thú lao lên, vòng nổ màu hệ, số sát thương bay lên, nhãn Khắc chế và Bạo kích), bỏ lỡ việc hằng ngày thì boss lao xuống đánh trả và linh thú mệt; thắng thì mở rương nhận thưởng. Có nút Bỏ qua, Xem lại và nút "Xem trận hôm qua" trong thẻ Bí cảnh. Sát thương giữ nguyên luật bước 4.1
+- [ ] Tương tác với linh thú: xoa đầu, kéo linh vật cho ăn, chỉ số thân mật, ngủ ban đêm, quà nhỏ ngẫu nhiên
+- [ ] Cửa hàng: trang phục cho linh thú, nền nhà linh thú, Bùa Giữ Chuỗi, để xu có chỗ tiêu
+- [ ] Sưu tập nhiều loài: trứng mới từ boss, quà điểm danh và thành tựu; khoảng 4 loài, mỗi loài 3 nhánh hệ; sổ Linh thú đồ giám; bậc Yêu Thú, Thánh Thú, Thần Thú
+- [ ] Phiêu lưu: làm xong việc hằng ngày thì cử linh thú đi thám hiểm vài giờ, về mang chuyện kể và linh vật
+- [ ] Chụp lại ảnh store sau khi xong
+
 **Giai đoạn 5: Phát hành**
 - [ ] Icon, ảnh store, chính sách quyền riêng tư. Đã có icon tạm (trứng linh thú nứt, ba đốm ba hệ, nền cam), vẽ bằng `tool/make_icon.py`, có icon thích ứng và bản đơn sắc; `store/icon_512.png` cho Google Play. Thay bằng icon đẹp hơn khi có (AI tạo ảnh, Canva hoặc thuê người vẽ). Đã có 5 ảnh store 1080×1920 (`store/screenshots/`, khung điện thoại và chú thích tiếng Việt, chụp với dữ liệu mẫu) và ảnh bìa 1024×500 (`store/feature_graphic.png`), ghép bằng `tool/make_store_images.py`. Còn: chính sách quyền riêng tư
 - [ ] Tài khoản Google Play Developer (phí một lần). Tài khoản cá nhân mới phải chạy closed testing với một số người test trong 14 ngày; kiểm tra lại yêu cầu hiện tại trước khi nộp

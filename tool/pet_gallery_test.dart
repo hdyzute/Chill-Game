@@ -33,6 +33,12 @@ void main() {
         const PetPainter(stage: PetStage.egg),
         for (final item in SpiritItem.values) SpiritItemPainter(item),
       ],
+      for (final kind in BossKind.values)
+        [
+          for (final pose in BossPose.values)
+            BossPainter(kind: kind, pose: pose),
+          BossPainter(kind: kind, tier: 2),
+        ],
       for (final branch in [null, ...TaskElement.values])
         [
           for (final mood in PetMood.values)

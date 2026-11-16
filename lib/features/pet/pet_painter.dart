@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import '../../data/task_enums.dart';
 import '../../domain/pet.dart';
 
+part 'boss_painter.dart';
+
 const _ink = Color(0xFF5A3420);
 const _shell = Color(0xFFFFF8EA);
 const _shellShade = Color(0xFFF0DEC4);

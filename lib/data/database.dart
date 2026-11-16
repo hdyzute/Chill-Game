@@ -84,6 +84,10 @@ class Profiles extends Table {
   /// Ngày (logic) đã xử lý sang ngày gần nhất. Null khi chưa mở app lần nào.
   DateTimeColumn get lastRolloverDate => dateTime().nullable()();
 
+  /// Ngày (logic) của trận boss đã chiếu gần nhất, để mỗi sáng chỉ tự mở
+  /// trận hôm qua một lần. Null khi chưa xem trận nào.
+  DateTimeColumn get lastBattleDay => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -162,7 +166,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'linh_thu'));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   // Khi đổi bảng: tăng schemaVersion, chạy `dart run build_runner build`
   // rồi `dart run drift_dev make-migrations`, sau đó viết bước fromXToY.
@@ -218,6 +222,9 @@ class AppDatabase extends _$AppDatabase {
           },
           from10To11: (m, schema) async {
             await m.createTable(schema.bosses);
+          },
+          from11To12: (m, schema) async {
+            await m.addColumn(schema.profiles, schema.profiles.lastBattleDay);
           },
         ),
         beforeOpen: (_) => into(profiles).insert(
